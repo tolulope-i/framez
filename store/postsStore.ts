@@ -25,6 +25,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     } catch (error) {
       console.error('Fetch posts error:', error);
       set({ loading: false });
+      throw new Error('Failed to fetch posts');
     }
   },
 
@@ -45,6 +46,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     } catch (error) {
       console.error('Fetch user posts error:', error);
       set({ loading: false });
+      throw new Error('Failed to fetch your posts');
     }
   },
 
@@ -55,14 +57,15 @@ export const usePostsStore = create<PostsState>((set, get) => ({
 
       let imageUrl: string | undefined;
 
+      // Upload image if provided
       if (imageUri) {
         const base64 = await FileSystem.readAsStringAsync(imageUri, {
           encoding: FileSystem.EncodingType.Base64,
         });
 
-        const fileName = `${user.id}_${Date.now()}.jpg`;
+        const fileName = `posts/${user.id}_${Date.now()}.jpg`;
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('posts')
+          .from('images')
           .upload(fileName, decode(base64), {
             contentType: 'image/jpeg',
           });
@@ -70,18 +73,19 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
-          .from('posts')
+          .from('images')
           .getPublicUrl(fileName);
 
         imageUrl = publicUrl;
       }
 
+      // Create post
       const { data, error } = await supabase
         .from('posts')
         .insert([
           {
             user_id: user.id,
-            content,
+            content: content.trim(),
             image_url: imageUrl,
             created_at: new Date().toISOString(),
           },
@@ -94,10 +98,15 @@ export const usePostsStore = create<PostsState>((set, get) => ({
 
       if (error) throw error;
 
+      // Update state
       set((state) => ({
         posts: [data, ...state.posts],
+        userPosts: [data, ...state.userPosts],
       }));
+
+      return data;
     } catch (error: any) {
+      console.error('Create post error:', error);
       throw new Error(error.message || 'Failed to create post');
     }
   },
@@ -116,6 +125,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         userPosts: state.userPosts.filter((p) => p.id !== postId),
       }));
     } catch (error: any) {
+      console.error('Delete post error:', error);
       throw new Error(error.message || 'Failed to delete post');
     }
   },
@@ -124,7 +134,10 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('posts')
-        .update({ content })
+        .update({ 
+          content: content.trim(),
+          updated_at: new Date().toISOString()
+        })
         .eq('id', postId)
         .select(`
           *,
@@ -138,7 +151,10 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         posts: state.posts.map((p) => (p.id === postId ? data : p)),
         userPosts: state.userPosts.map((p) => (p.id === postId ? data : p)),
       }));
+
+      return data;
     } catch (error: any) {
+      console.error('Update post error:', error);
       throw new Error(error.message || 'Failed to update post');
     }
   },
