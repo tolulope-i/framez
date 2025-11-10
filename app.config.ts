@@ -1,0 +1,55 @@
+export default {
+  expo: {
+    name: 'Framez',
+    slug: 'framez-app',
+    version: '1.0.0',
+    orientation: 'portrait',
+    icon: './assets/images/icon.png',
+    scheme: 'framezapp',
+    userInterfaceStyle: 'automatic',
+    newArchEnabled: true,
+    ios: {
+      supportsTablet: true,
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: './assets/images/adaptive-icon.png',
+        backgroundColor: '#FFFFFF',
+      },
+    },
+    web: {
+      bundler: 'metro',
+      output: 'static',
+      favicon: './assets/images/favicon.png',
+    },
+    plugins: [
+      'expo-router',
+      [
+        'expo-splash-screen',
+        {
+          image: './assets/images/splash-icon.png',
+          imageWidth: 200,
+          resizeMode: 'contain',
+          backgroundColor: '#ffffff',
+        },
+      ],
+    ],
+    experiments: {
+      typedRoutes: true,
+      reactCompiler: true,
+    },
+    // Performance optimizations
+    extra: {
+      eas: {
+        projectId: 'your-project-id',
+      },
+    },
+    // Bundle optimization
+    updates: {
+      fallbackToCacheTimeout: 0,
+    },
+    assetBundlePatterns: [
+      '**/*',
+    ],
+  },
+};

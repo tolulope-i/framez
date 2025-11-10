@@ -1,5 +1,5 @@
 import React from "react";
-import { View, ViewProps, StyleSheet } from "react-native";
+import { View, ViewProps } from "react-native";
 import { useThemeStore } from "@/store/themeStore";
 import { Colors } from "@/constants/Colors";
 

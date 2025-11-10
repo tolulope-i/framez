@@ -1,11 +1,10 @@
-import { Tabs, useRouter, useSegments } from 'expo-router';
-import { Text } from 'react-native';
-import { useThemeStore } from '@/store/themeStore';
-import { Colors } from '@/constants/Colors';
-import { useAuthStore } from '@/store/authStore';
-import { useEffect } from 'react';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { View } from 'react-native';
+import { Tabs, useRouter, useSegments } from "expo-router";
+import { Text, View } from "react-native";
+import { useThemeStore } from "@/store/themeStore";
+import { Colors } from "@/constants/Colors";
+import { useAuthStore } from "@/store/authStore";
+import { useEffect } from "react";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function TabsLayout() {
   const { isDark } = useThemeStore();
@@ -18,10 +17,10 @@ export default function TabsLayout() {
     if (loading) return;
 
     // If user is not authenticated and in tabs group, redirect to auth
-    if (!user && segments[0] === '(tabs)') {
-      router.replace('/(auth)/landing');
+    if (!user && segments[0] === "(tabs)") {
+      router.replace("/(auth)/landing");
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, router]);
 
   if (loading) {
     return (
@@ -54,16 +53,25 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: "Home",
           tabBarIcon: ({ color, size }) => (
             <Text style={{ fontSize: 24, color }}>🏠</Text>
           ),
         }}
       />
       <Tabs.Screen
+        name="search"
+        options={{
+          title: "Search",
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ fontSize: 24, color }}>🔍</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: "Profile",
           tabBarIcon: ({ color, size }) => (
             <Text style={{ fontSize: 24, color }}>👤</Text>
           ),

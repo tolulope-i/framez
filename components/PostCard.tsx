@@ -9,6 +9,7 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Share,
 } from 'react-native';
 import { Post } from '@/types';
 import { useThemeStore } from '@/store/themeStore';
@@ -19,18 +20,30 @@ import { validatePostContent } from '@/utils/validation';
 
 interface PostCardProps {
   post: Post;
+  onUserPress?: (userId: string) => void;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post }) => {
+export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
   const { isDark } = useThemeStore();
   const { user } = useAuthStore();
-  const { deletePost, updatePost } = usePostsStore();
+  const { 
+    deletePost, 
+    updatePost, 
+    likePost, 
+    unlikePost, 
+    savePost, 
+    unsavePost,
+    addComment 
+  } = usePostsStore();
   const colors = isDark ? Colors.dark : Colors.light;
 
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [editError, setEditError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [showOptions, setShowOptions] = useState(false);
 
   const isOwner = user?.id === post.user_id;
 
@@ -51,6 +64,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               Alert.alert('Error', error.message || 'Failed to delete post');
             } finally {
               setLoading(false);
+              setShowOptions(false);
             }
           },
         },
@@ -71,10 +85,57 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       await updatePost(post.id, editContent.trim());
       setIsEditing(false);
       setEditError('');
+      setShowOptions(false);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to update post');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLike = async () => {
+    try {
+      if (post.is_liked) {
+        await unlikePost(post.id);
+      } else {
+        await likePost(post.id);
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to update like');
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      if (post.is_saved) {
+        await unsavePost(post.id);
+      } else {
+        await savePost(post.id);
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to update save');
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out this post from ${post.user?.name} on Framez: ${post.content}`,
+        url: post.image_url,
+      });
+    } catch (error) {
+      console.error('Error sharing post:', error);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+
+    try {
+      await addComment(post.id, commentText.trim());
+      setCommentText('');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to add comment');
     }
   };
 
@@ -98,13 +159,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     setEditContent(post.content);
     setEditError('');
     setIsEditing(false);
+    setShowOptions(false);
   };
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.userInfo}>
+        <TouchableOpacity 
+          style={styles.userInfo}
+          onPress={() => onUserPress?.(post.user_id)}
+          disabled={!onUserPress}
+        >
           <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
             <Text style={styles.avatarText}>
               {post.user?.name?.charAt(0).toUpperCase() || 'U'}
@@ -118,30 +184,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               {formatDate(post.created_at)}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
-        {isOwner && (
-          <View style={styles.actions}>
-            <TouchableOpacity
-              onPress={() => setIsEditing(true)}
-              style={styles.actionButton}
-              disabled={loading}
-            >
-              <Text style={[styles.actionText, { color: colors.primary }]}>
-                Edit
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={handleDelete} 
-              style={styles.actionButton}
-              disabled={loading}
-            >
-              <Text style={[styles.actionText, { color: colors.error }]}>
-                Delete
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        <TouchableOpacity
+          onPress={() => setShowOptions(true)}
+          style={styles.optionsButton}
+        >
+          <Text style={[styles.optionsText, { color: colors.text }]}>•••</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Image */}
@@ -157,6 +207,109 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       <Text style={[styles.content, { color: colors.text }]}>
         {post.content}
       </Text>
+
+      {/* Actions */}
+      <View style={styles.actions}>
+        <View style={styles.leftActions}>
+          <TouchableOpacity onPress={handleLike} style={styles.actionButton}>
+            <Text style={[styles.actionIcon, { color: post.is_liked ? colors.error : colors.text }]}>
+              {post.is_liked ? '❤️' : '🤍'}
+            </Text>
+            <Text style={[styles.actionCount, { color: colors.textSecondary }]}>
+              {post.likes_count || 0}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={() => setShowComments(!showComments)} 
+            style={styles.actionButton}
+          >
+            <Text style={[styles.actionIcon, { color: colors.text }]}>💬</Text>
+            <Text style={[styles.actionCount, { color: colors.textSecondary }]}>
+              {post.comments_count || 0}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleShare} style={styles.actionButton}>
+            <Text style={[styles.actionIcon, { color: colors.text }]}>↗️</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity onPress={handleSave} style={styles.actionButton}>
+          <Text style={[styles.actionIcon, { color: post.is_saved ? colors.primary : colors.text }]}>
+            {post.is_saved ? '🔖' : '📑'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Comments Section */}
+      {showComments && (
+        <View style={styles.commentsSection}>
+          <TextInput
+            style={[
+              styles.commentInput,
+              {
+                backgroundColor: colors.background,
+                color: colors.text,
+                borderColor: colors.border,
+              },
+            ]}
+            value={commentText}
+            onChangeText={setCommentText}
+            placeholder="Add a comment..."
+            placeholderTextColor={colors.textSecondary}
+            onSubmitEditing={handleAddComment}
+          />
+        </View>
+      )}
+
+      {/* Options Modal */}
+      <Modal visible={showOptions} transparent animationType="fade">
+        <TouchableOpacity 
+          style={styles.optionsOverlay}
+          onPress={() => setShowOptions(false)}
+        >
+          <View style={[styles.optionsMenu, { backgroundColor: colors.surface }]}>
+            {isOwner && (
+              <>
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsEditing(true);
+                    setShowOptions(false);
+                  }}
+                  style={styles.optionItem}
+                >
+                  <Text style={[styles.optionText, { color: colors.text }]}>
+                    Edit Post
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleDelete}
+                  style={styles.optionItem}
+                >
+                  <Text style={[styles.optionText, { color: colors.error }]}>
+                    Delete Post
+                  </Text>
+                </TouchableOpacity>
+                <View style={[styles.separator, { backgroundColor: colors.border }]} />
+              </>
+            )}
+            <TouchableOpacity onPress={handleShare} style={styles.optionItem}>
+              <Text style={[styles.optionText, { color: colors.text }]}>
+                Share Post
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => setShowOptions(false)} 
+              style={styles.optionItem}
+            >
+              <Text style={[styles.optionText, { color: colors.textSecondary }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Edit Modal */}
       <Modal visible={isEditing} transparent animationType="slide">
@@ -227,8 +380,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 12,
+    padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -238,12 +391,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 12,
   },
   userInfo: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     flex: 1,
   },
   userDetails: {
@@ -270,27 +423,79 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 12,
   },
-  actions: {
-    flexDirection: 'row',
+  optionsButton: {
+    padding: 8,
   },
-  actionButton: {
-    marginLeft: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  actionText: {
-    fontSize: 14,
-    fontWeight: '600',
+  optionsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   image: {
     width: '100%',
-    height: 300,
-    borderRadius: 12,
+    height: 400,
+    borderRadius: 8,
     marginBottom: 12,
   },
   content: {
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  leftActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  actionIcon: {
+    fontSize: 20,
+  },
+  actionCount: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  commentsSection: {
+    marginTop: 8,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
+  optionsOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  optionsMenu: {
+    width: '80%',
+    borderRadius: 12,
+    padding: 8,
+  },
+  optionItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  separator: {
+    height: 1,
+    marginVertical: 4,
   },
   modalOverlay: {
     flex: 1,
