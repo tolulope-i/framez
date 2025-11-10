@@ -98,11 +98,11 @@ const styles = StyleSheet.create({
   storyItem: {
     alignItems: 'center',
     marginRight: 16,
-    width: 100,
+    width: 70,
   },
   addStoryCircle: {
-    width: 100,
-    height: 150,
+    width: 70,
+    height: 70,
     borderRadius: 15,
     borderWidth: 2,
     borderStyle: 'dashed',
@@ -115,8 +115,8 @@ const styles = StyleSheet.create({
     fontWeight: '300',
   },
   storyCircle: {
-    width: 100,
-    height: 150,
+    width: 70,
+    height: 70,
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',

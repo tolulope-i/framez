@@ -21,7 +21,7 @@ type SearchTab = 'users' | 'posts';
 
 export default function SearchScreen() {
   const { isDark } = useThemeStore();
-  const { users, searchUsers, loading } = useUserStore();
+  const { users, searchUsers, followUser, unfollowUser, loading } = useUserStore();
   const { posts, fetchPosts } = usePostsStore();
   const colors = isDark ? Colors.dark : Colors.light;
 
@@ -52,14 +52,24 @@ export default function SearchScreen() {
   }, [debouncedQuery, activeTab, searchUsers, fetchPosts, posts.length]);
 
   const handleUserPress = useCallback((userId: string) => {
-    // For now, navigate to profile tab
-    // You can create a user profile screen later
     router.push('/(tabs)/profile');
   }, []);
 
   const handlePostUserPress = useCallback((userId: string) => {
     router.push('/(tabs)/profile');
   }, []);
+
+  const handleFollowToggle = useCallback(async (user: User) => {
+    try {
+      if (user.is_following) {
+        await unfollowUser(user.id);
+      } else {
+        await followUser(user.id);
+      }
+    } catch (error) {
+      console.error('Follow/unfollow error:', error);
+    }
+  }, [followUser, unfollowUser]);
 
   const renderUserItem = useCallback(({ item }: { item: User }) => (
     <TouchableOpacity
@@ -80,6 +90,7 @@ export default function SearchScreen() {
         </Text>
       </View>
       <TouchableOpacity
+        onPress={() => handleFollowToggle(item)}
         style={[
           styles.followButton,
           { 
@@ -96,7 +107,7 @@ export default function SearchScreen() {
         </Text>
       </TouchableOpacity>
     </TouchableOpacity>
-  ), [colors, handleUserPress]);
+  ), [colors, handleUserPress, handleFollowToggle]);
 
   const renderPostItem = useCallback(({ item }: { item: Post }) => (
     <PostCard 
@@ -183,17 +194,33 @@ export default function SearchScreen() {
       {loading && activeTab === 'users' && debouncedQuery.trim() ? (
         <LoadingSpinner />
       ) : (
-        <FlatList
-          data={activeTab === 'users' ? users : posts}
-          keyExtractor={(item) => item.id}
-          renderItem={activeTab === 'users' ? renderUserItem : renderPostItem}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={renderEmptyState}
-          showsVerticalScrollIndicator={false}
-          initialNumToRender={10}
-          maxToRenderPerBatch={15}
-          windowSize={10}
-        />
+        <>
+          {activeTab === 'users' ? (
+            <FlatList
+              data={users}
+              keyExtractor={(item) => item.id}
+              renderItem={renderUserItem}
+              contentContainerStyle={styles.listContent}
+              ListEmptyComponent={renderEmptyState}
+              showsVerticalScrollIndicator={false}
+              initialNumToRender={10}
+              maxToRenderPerBatch={15}
+              windowSize={10}
+            />
+          ) : (
+            <FlatList
+              data={posts}
+              keyExtractor={(item) => item.id}
+              renderItem={renderPostItem}
+              contentContainerStyle={styles.listContent}
+              ListEmptyComponent={renderEmptyState}
+              showsVerticalScrollIndicator={false}
+              initialNumToRender={10}
+              maxToRenderPerBatch={15}
+              windowSize={10}
+            />
+          )}
+        </>
       )}
     </SafeAreaView>
   );

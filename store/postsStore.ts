@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { PostsState, Post } from '@/types';
+import { PostsState, Post, Comment } from '@/types';
 import { supabase } from '@/services/supabase';
 import { uploadImage } from '@/utils/imageUpload';
 
@@ -8,9 +8,9 @@ interface PostWithCounts extends Post {
   comments_count: number;
   is_liked: boolean;
   is_saved: boolean;
-  likes: Array<{ user_id: string }>;
-  comments: Array<{ id: string }>;
-  saved_posts: Array<{ user_id: string }>;
+  likes: { user_id: string }[];
+  comments: { id: string; content: string; user_id: string; created_at: string }[];
+  saved_posts: { user_id: string }[];
 }
 
 export const usePostsStore = create<PostsState>((set, get) => ({
@@ -31,18 +31,18 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         .select(`
           *,
           user:users(*),
-          likes(count),
-          comments(count),
-          saved_posts!inner(user_id)
+          likes(user_id),
+          comments(id, content, user_id, created_at),
+          saved_posts(user_id)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const transformedPosts: PostWithCounts[] = (data || []).map((post: any) => ({
+      const transformedPosts: Post[] = (data || []).map((post: any) => ({
         ...post,
-        likes_count: post.likes?.[0]?.count || 0,
-        comments_count: post.comments?.[0]?.count || 0,
+        likes_count: post.likes?.length || 0,
+        comments_count: post.comments?.length || 0,
         is_liked: post.likes?.some((like: any) => like.user_id === user.id) || false,
         is_saved: post.saved_posts?.some((saved: any) => saved.user_id === user.id) || false
       }));
@@ -67,19 +67,19 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         .select(`
           *,
           user:users(*),
-          likes(count),
-          comments(count),
-          saved_posts!inner(user_id)
+          likes(user_id),
+          comments(id, content, user_id, created_at),
+          saved_posts(user_id)
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const transformedPosts: PostWithCounts[] = (data || []).map((post: any) => ({
+      const transformedPosts: Post[] = (data || []).map((post: any) => ({
         ...post,
-        likes_count: post.likes?.[0]?.count || 0,
-        comments_count: post.comments?.[0]?.count || 0,
+        likes_count: post.likes?.length || 0,
+        comments_count: post.comments?.length || 0,
         is_liked: post.likes?.some((like: any) => like.user_id === user.id) || false,
         is_saved: post.saved_posts?.some((saved: any) => saved.user_id === user.id) || false
       }));
@@ -105,9 +105,9 @@ export const usePostsStore = create<PostsState>((set, get) => ({
           post:posts(
             *,
             user:users(*),
-            likes(count),
-            comments(count),
-            saved_posts!inner(user_id)
+            likes(user_id),
+            comments(id, content, user_id, created_at),
+            saved_posts(user_id)
           )
         `)
         .eq('user_id', user.id)
@@ -115,10 +115,10 @@ export const usePostsStore = create<PostsState>((set, get) => ({
 
       if (error) throw error;
 
-      const savedPosts: PostWithCounts[] = (data || []).map((item: any) => ({
+      const savedPosts: Post[] = (data || []).map((item: any) => ({
         ...item.post,
-        likes_count: item.post.likes?.[0]?.count || 0,
-        comments_count: item.post.comments?.[0]?.count || 0,
+        likes_count: item.post.likes?.length || 0,
+        comments_count: item.post.comments?.length || 0,
         is_liked: item.post.likes?.some((like: any) => like.user_id === user.id) || false,
         is_saved: true
       }));
@@ -160,15 +160,12 @@ export const usePostsStore = create<PostsState>((set, get) => ({
 
       if (error) throw error;
 
-      const newPost: PostWithCounts = {
+      const newPost: Post = {
         ...data,
         likes_count: 0,
         comments_count: 0,
         is_liked: false,
         is_saved: false,
-        likes: [],
-        comments: [],
-        saved_posts: []
       };
 
       set((state) => ({
@@ -221,32 +218,12 @@ export const usePostsStore = create<PostsState>((set, get) => ({
       if (error) throw error;
 
       set((state) => ({
-        posts: state.posts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { 
-              ...data, 
-              likes_count: currentPost.likes_count, 
-              comments_count: currentPost.comments_count, 
-              is_liked: currentPost.is_liked, 
-              is_saved: currentPost.is_saved 
-            };
-          }
-          return p;
-        }),
-        userPosts: state.userPosts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { 
-              ...data, 
-              likes_count: currentPost.likes_count, 
-              comments_count: currentPost.comments_count, 
-              is_liked: currentPost.is_liked, 
-              is_saved: currentPost.is_saved 
-            };
-          }
-          return p;
-        }),
+        posts: state.posts.map((p) => 
+          p.id === postId ? { ...data, likes_count: p.likes_count, comments_count: p.comments_count, is_liked: p.is_liked, is_saved: p.is_saved } : p
+        ),
+        userPosts: state.userPosts.map((p) => 
+          p.id === postId ? { ...data, likes_count: p.likes_count, comments_count: p.comments_count, is_liked: p.is_liked, is_saved: p.is_saved } : p
+        ),
       }));
 
       return data;
@@ -268,28 +245,12 @@ export const usePostsStore = create<PostsState>((set, get) => ({
       if (error) throw error;
 
       set((state) => ({
-        posts: state.posts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { 
-              ...currentPost, 
-              likes_count: (currentPost.likes_count || 0) + 1, 
-              is_liked: true 
-            };
-          }
-          return p;
-        }),
-        userPosts: state.userPosts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { 
-              ...currentPost, 
-              likes_count: (currentPost.likes_count || 0) + 1, 
-              is_liked: true 
-            };
-          }
-          return p;
-        }),
+        posts: state.posts.map((p) => 
+          p.id === postId ? { ...p, likes_count: (p.likes_count || 0) + 1, is_liked: true } : p
+        ),
+        userPosts: state.userPosts.map((p) => 
+          p.id === postId ? { ...p, likes_count: (p.likes_count || 0) + 1, is_liked: true } : p
+        ),
       }));
     } catch (error: any) {
       console.error('Like post error:', error);
@@ -311,28 +272,12 @@ export const usePostsStore = create<PostsState>((set, get) => ({
       if (error) throw error;
 
       set((state) => ({
-        posts: state.posts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { 
-              ...currentPost, 
-              likes_count: Math.max(0, (currentPost.likes_count || 1) - 1), 
-              is_liked: false 
-            };
-          }
-          return p;
-        }),
-        userPosts: state.userPosts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { 
-              ...currentPost, 
-              likes_count: Math.max(0, (currentPost.likes_count || 1) - 1), 
-              is_liked: false 
-            };
-          }
-          return p;
-        }),
+        posts: state.posts.map((p) => 
+          p.id === postId ? { ...p, likes_count: Math.max(0, (p.likes_count || 1) - 1), is_liked: false } : p
+        ),
+        userPosts: state.userPosts.map((p) => 
+          p.id === postId ? { ...p, likes_count: Math.max(0, (p.likes_count || 1) - 1), is_liked: false } : p
+        ),
       }));
     } catch (error: any) {
       console.error('Unlike post error:', error);
@@ -352,20 +297,12 @@ export const usePostsStore = create<PostsState>((set, get) => ({
       if (error) throw error;
 
       set((state) => ({
-        posts: state.posts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { ...currentPost, is_saved: true };
-          }
-          return p;
-        }),
-        userPosts: state.userPosts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { ...currentPost, is_saved: true };
-          }
-          return p;
-        }),
+        posts: state.posts.map((p) => 
+          p.id === postId ? { ...p, is_saved: true } : p
+        ),
+        userPosts: state.userPosts.map((p) => 
+          p.id === postId ? { ...p, is_saved: true } : p
+        ),
       }));
     } catch (error: any) {
       console.error('Save post error:', error);
@@ -387,20 +324,12 @@ export const usePostsStore = create<PostsState>((set, get) => ({
       if (error) throw error;
 
       set((state) => ({
-        posts: state.posts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { ...currentPost, is_saved: false };
-          }
-          return p;
-        }),
-        userPosts: state.userPosts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { ...currentPost, is_saved: false };
-          }
-          return p;
-        }),
+        posts: state.posts.map((p) => 
+          p.id === postId ? { ...p, is_saved: false } : p
+        ),
+        userPosts: state.userPosts.map((p) => 
+          p.id === postId ? { ...p, is_saved: false } : p
+        ),
         savedPosts: state.savedPosts.filter((p) => p.id !== postId),
       }));
     } catch (error: any) {
@@ -432,26 +361,12 @@ export const usePostsStore = create<PostsState>((set, get) => ({
       if (error) throw error;
 
       set((state) => ({
-        posts: state.posts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { 
-              ...currentPost, 
-              comments_count: (currentPost.comments_count || 0) + 1 
-            };
-          }
-          return p;
-        }),
-        userPosts: state.userPosts.map((p) => {
-          if (p.id === postId) {
-            const currentPost = p as PostWithCounts;
-            return { 
-              ...currentPost, 
-              comments_count: (currentPost.comments_count || 0) + 1 
-            };
-          }
-          return p;
-        }),
+        posts: state.posts.map((p) => 
+          p.id === postId ? { ...p, comments_count: (p.comments_count || 0) + 1 } : p
+        ),
+        userPosts: state.userPosts.map((p) => 
+          p.id === postId ? { ...p, comments_count: (p.comments_count || 0) + 1 } : p
+        ),
       }));
 
       return data;

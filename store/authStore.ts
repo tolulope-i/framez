@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AuthState, User } from '@/types';
+import { AuthState } from '@/types';
 import { supabase } from '@/services/supabase';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -29,7 +29,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (error) {
           console.warn('User profile not found, creating one...');
           // Create user profile if it doesn't exist
-          const { data: newUser, error: createError } = await supabase
+          const { data: newUser } = await supabase
             .from('users')
             .insert([
               {
@@ -60,8 +60,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ loading: false, connectionError: null });
       }
 
-      // Set up auth state listener WITHOUT navigation
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      // Set up auth state listener
+      supabase.auth.onAuthStateChange(
         async (event, session) => {
           console.log('Auth event:', event);
           
@@ -107,8 +107,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
         }
       );
-
-      return () => subscription.unsubscribe();
     } catch (error: any) {
       console.error('Auth initialization error:', error);
       set({
