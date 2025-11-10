@@ -37,33 +37,42 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [contentError, setContentError] = useState('');
 
   const pickImage = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  try {
+    // Request permissions
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permission Required',
+        'Sorry, we need camera roll permissions to upload images.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
 
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Sorry, we need camera roll permissions to upload images.',
-          [{ text: 'OK' }]
-        );
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+      exif: false, // Don't include EXIF data for better performance
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const selectedImage = result.assets[0];
+      
+      // Validate image size (optional - limit to 10MB)
+      if (selectedImage.fileSize && selectedImage.fileSize > 10 * 1024 * 1024) {
+        Alert.alert('Error', 'Image size should be less than 10MB');
         return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setImageUri(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      setImageUri(selectedImage.uri);
     }
-  };
+  } catch (error) {
+    console.error('Error picking image:', error);
+    Alert.alert('Error', 'Failed to pick image. Please try again.');
+  }
+};
 
   const handleSubmit = async () => {
     const contentValidation = validatePostContent(content);

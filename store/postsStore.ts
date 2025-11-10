@@ -3,6 +3,7 @@ import { PostsState, Post } from '@/types';
 import { supabase } from '@/services/supabase';
 import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
+import { uploadImage } from '@/utils/imageUpload';
 
 export const usePostsStore = create<PostsState>((set, get) => ({
   posts: [],
@@ -56,15 +57,22 @@ export const usePostsStore = create<PostsState>((set, get) => ({
       if (!user) throw new Error('Not authenticated');
 
       let imageUrl: string | undefined;
-
+     
       // Upload image if provided
       if (imageUri) {
+        // Use the new FileSystem API
+        const fileInfo = await FileSystem.getInfoAsync(imageUri);
+        if (!fileInfo.exists) {
+          throw new Error('Image file not found');
+        }
+
+        // Read file as base64 using the new API
         const base64 = await FileSystem.readAsStringAsync(imageUri, {
           encoding: 'base64',
         });
 
-
         const fileName = `posts/${user.id}_${Date.now()}.jpg`;
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('images')
           .upload(fileName, decode(base64), {
@@ -114,6 +122,24 @@ export const usePostsStore = create<PostsState>((set, get) => ({
 
   deletePost: async (postId: string) => {
     try {
+      // First, get the post to check for image
+      const { data: post } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', postId)
+        .single();
+
+      // Delete image from storage if exists
+      if (post?.image_url) {
+        const imagePath = post.image_url.split('/').pop();
+        if (imagePath) {
+          await supabase.storage
+            .from('images')
+            .remove([`posts/${imagePath}`]);
+        }
+      }
+
+      // Delete post from database
       const { error } = await supabase
         .from('posts')
         .delete()
