@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,13 +10,13 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { useThemeStore } from '@/store/themeStore';
-import { usePostsStore } from '@/store/postsStore';
-import { Colors } from '@/constants/Colors';
-import { LinearGradient } from 'expo-linear-gradient';
-import { validatePostContent } from '@/utils/validation';
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { useThemeStore } from "@/store/themeStore";
+import { usePostsStore } from "@/store/postsStore";
+import { Colors } from "@/constants/Colors";
+import { LinearGradient } from "expo-linear-gradient";
+import { validatePostContent } from "@/utils/validation";
 
 interface CreatePostModalProps {
   visible: boolean;
@@ -31,71 +31,72 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const { createPost } = usePostsStore();
   const colors = isDark ? Colors.dark : Colors.light;
 
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [contentError, setContentError] = useState('');
+  const [contentError, setContentError] = useState("");
 
   const pickImage = async () => {
   try {
     // Request permissions
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
+    if (status !== "granted") {
       Alert.alert(
-        'Permission Required',
-        'Sorry, we need camera roll permissions to upload images.',
-        [{ text: 'OK' }]
+        "Permission Required",
+        "Sorry, we need camera roll permissions to upload images.",
+        [{ text: "OK" }]
       );
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, // ✅ Correct for Expo SDK 54
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
-      exif: false, // Don't include EXIF data for better performance
+      exif: false,
     });
 
     if (!result.canceled && result.assets[0]) {
       const selectedImage = result.assets[0];
-      
-      // Validate image size (optional - limit to 10MB)
+
+      // Validate image size if available
       if (selectedImage.fileSize && selectedImage.fileSize > 10 * 1024 * 1024) {
-        Alert.alert('Error', 'Image size should be less than 10MB');
+        Alert.alert("Error", "Image size should be less than 10MB");
         return;
       }
 
       setImageUri(selectedImage.uri);
     }
   } catch (error) {
-    console.error('Error picking image:', error);
-    Alert.alert('Error', 'Failed to pick image. Please try again.');
+    console.error("Error picking image:", error);
+    Alert.alert("Error", "Failed to pick image. Please try again.");
   }
 };
 
+
   const handleSubmit = async () => {
     const contentValidation = validatePostContent(content);
-    
+
     if (contentValidation) {
       setContentError(contentValidation);
       return;
     }
 
     if (!content.trim() && !imageUri) {
-      setContentError('Please add some content or an image to your post');
+      setContentError("Please add some content or an image to your post");
       return;
     }
 
     setLoading(true);
     try {
       await createPost(content.trim(), imageUri || undefined);
-      setContent('');
+      setContent("");
       setImageUri(null);
-      setContentError('');
+      setContentError("");
       onClose();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to create post');
+      Alert.alert("Error", error.message || "Failed to create post");
     } finally {
       setLoading(false);
     }
@@ -103,17 +104,17 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const handleClose = () => {
     if (loading) return; // Prevent closing while posting
-    
-    setContent('');
+
+    setContent("");
     setImageUri(null);
-    setContentError('');
+    setContentError("");
     onClose();
   };
 
   const handleContentChange = (text: string) => {
     setContent(text);
     if (contentError) {
-      setContentError('');
+      setContentError("");
     }
   };
 
@@ -134,21 +135,15 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
           ]}
         >
           {/* Header */}
-          <LinearGradient
-            colors={['#FF8C42', '#FFD93D']}
-            style={styles.header}
-          >
-            <TouchableOpacity 
-              onPress={handleClose}
-              disabled={loading}
-            >
+          <LinearGradient colors={["#FF8C42", "#FFD93D"]} style={styles.header}>
+            <TouchableOpacity onPress={handleClose} disabled={loading}>
               <Text style={styles.headerButton}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Create Post</Text>
             <View style={{ width: 60 }} />
           </LinearGradient>
 
-          <ScrollView 
+          <ScrollView
             style={styles.content}
             showsVerticalScrollIndicator={false}
           >
@@ -184,9 +179,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             {/* Image Preview */}
             {imageUri && (
               <View style={styles.imageContainer}>
-                <Image 
-                  source={{ uri: imageUri }} 
-                  style={styles.image} 
+                <Image
+                  source={{ uri: imageUri }}
+                  style={styles.image}
                   resizeMode="cover"
                 />
                 <TouchableOpacity
@@ -205,7 +200,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               disabled={loading}
               style={[
                 styles.imageButton,
-                { 
+                {
                   backgroundColor: colors.background,
                   borderColor: colors.border,
                   opacity: loading ? 0.6 : 1,
@@ -213,7 +208,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               ]}
             >
               <Text style={[styles.imageButtonText, { color: colors.primary }]}>
-                {imageUri ? '📷 Change Image' : '📷 Add Image'}
+                {imageUri ? "📷 Change Image" : "📷 Add Image"}
               </Text>
             </TouchableOpacity>
           </ScrollView>
@@ -225,11 +220,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               disabled={loading || (!content.trim() && !imageUri)}
               style={[
                 styles.submitButton,
-                { opacity: (loading || (!content.trim() && !imageUri)) ? 0.6 : 1 },
+                {
+                  opacity: loading || (!content.trim() && !imageUri) ? 0.6 : 1,
+                },
               ]}
             >
               <LinearGradient
-                colors={['#FF8C42', '#FFD93D']}
+                colors={["#FF8C42", "#FFD93D"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.submitButtonGradient}
@@ -251,31 +248,31 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "flex-end",
   },
   container: {
-    height: '90%',
+    height: "90%",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
     paddingTop: 40,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
   },
   headerButton: {
     fontSize: 16,
-    color: '#FFF',
-    fontWeight: '600',
+    color: "#FFF",
+    fontWeight: "600",
   },
   content: {
     flex: 1,
@@ -290,11 +287,11 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     minHeight: 120,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   charCount: {
     fontSize: 12,
-    textAlign: 'right',
+    textAlign: "right",
     marginTop: 4,
   },
   error: {
@@ -302,42 +299,42 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   imageContainer: {
-    position: 'relative',
+    position: "relative",
     marginBottom: 16,
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   image: {
-    width: '100%',
+    width: "100%",
     height: 300,
   },
   removeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 12,
     right: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   removeButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   imageButton: {
     padding: 16,
     borderRadius: 12,
     borderWidth: 2,
-    borderStyle: 'dashed',
-    alignItems: 'center',
+    borderStyle: "dashed",
+    alignItems: "center",
     marginBottom: 20,
   },
   imageButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   submitButtonContainer: {
     padding: 20,
@@ -345,15 +342,15 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   submitButtonGradient: {
     padding: 18,
-    alignItems: 'center',
+    alignItems: "center",
   },
   submitButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

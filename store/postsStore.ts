@@ -57,35 +57,10 @@ export const usePostsStore = create<PostsState>((set, get) => ({
       if (!user) throw new Error('Not authenticated');
 
       let imageUrl: string | undefined;
-     
+
       // Upload image if provided
       if (imageUri) {
-        // Use the new FileSystem API
-        const fileInfo = await FileSystem.getInfoAsync(imageUri);
-        if (!fileInfo.exists) {
-          throw new Error('Image file not found');
-        }
-
-        // Read file as base64 using the new API
-        const base64 = await FileSystem.readAsStringAsync(imageUri, {
-          encoding: 'base64',
-        });
-
-        const fileName = `posts/${user.id}_${Date.now()}.jpg`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('images')
-          .upload(fileName, decode(base64), {
-            contentType: 'image/jpeg',
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('images')
-          .getPublicUrl(fileName);
-
-        imageUrl = publicUrl;
+        imageUrl = await uploadImage(imageUri, user.id);
       }
 
       // Create post
@@ -100,9 +75,9 @@ export const usePostsStore = create<PostsState>((set, get) => ({
           },
         ])
         .select(`
-          *,
-          user:users(*)
-        `)
+        *,
+        user:users(*)
+      `)
         .single();
 
       if (error) throw error;
