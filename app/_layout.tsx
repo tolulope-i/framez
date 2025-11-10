@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { View } from 'react-native';
 
 export default function RootLayout() {
-  const { initialize, loading: authLoading } = useAuthStore();
+  const { initialize, loading: authLoading, user } = useAuthStore();
   const { initializeTheme, isDark } = useThemeStore();
   const [appReady, setAppReady] = useState(false);
 
@@ -26,6 +26,7 @@ export default function RootLayout() {
     initApp();
   }, []);
 
+  // Show loading while initializing
   if (!appReady || authLoading) {
     return (
       <View style={{ flex: 1 }}>

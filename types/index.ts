@@ -1,20 +1,32 @@
 export interface User {
-    id: string;
-    email: string;
-    name: string;
-    avatar_url?: string;
-    created_at: string;
+  id: string;
+  email: string;
+  name: string;
+  avatar_url?: string;
+  created_at: string;
 }
 
 export interface Post {
-    user: User | null;
-    session: any;
-    loading: boolean;
-    signIn: (email: string, password: string) => Promise<void>;
-    signUp: (email: string, password: string, name:string) => Promise<void>;
-    signOut: () => Promise<void>;
-    resetPassword: (email: string) => Promise<void>;
-    initialize: () => Promise<void>
+  id: string;
+  user_id: string;
+  content: string;
+  image_url?: string;
+  created_at: string;
+  updated_at?: string;
+  user?: User;
+}
+
+export interface AuthState {
+  user: User | null;
+  session: any;
+  loading: boolean;
+  connectionError: string | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  initialize: () => Promise<void>;
+  clearError: () => void;
 }
 
 export interface PostsState {

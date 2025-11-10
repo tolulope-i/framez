@@ -1,4 +1,4 @@
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, useRouter, useSegments } from 'expo-router';
 import { Text } from 'react-native';
 import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/Colors';
@@ -10,14 +10,18 @@ import { View } from 'react-native';
 export default function TabsLayout() {
   const { isDark } = useThemeStore();
   const { user, loading } = useAuthStore();
+  const segments = useSegments();
   const router = useRouter();
   const colors = isDark ? Colors.dark : Colors.light;
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return;
+
+    // If user is not authenticated and in tabs group, redirect to auth
+    if (!user && segments[0] === '(tabs)') {
       router.replace('/(auth)/landing');
     }
-  }, [user, loading]);
+  }, [user, loading, segments]);
 
   if (loading) {
     return (

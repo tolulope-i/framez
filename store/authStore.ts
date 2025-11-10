@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { AuthState, User } from '@/types';
 import { supabase } from '@/services/supabase';
-import { router } from 'expo-router';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -13,34 +12,62 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ loading: true, connectionError: null });
       
+      // Get current session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        // Fetch user profile (created by trigger)
-        const { data: userData } = await supabase
+        // Wait a bit for trigger to create user profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Fetch user profile
+        const { data: userData, error } = await supabase
           .from('users')
           .select('*')
           .eq('id', session.user.id)
           .single();
 
-        set({ 
-          user: userData || null, 
-          session,
-          loading: false,
-          connectionError: null
-        });
+        if (error) {
+          console.warn('User profile not found, creating one...');
+          // Create user profile if it doesn't exist
+          const { data: newUser, error: createError } = await supabase
+            .from('users')
+            .insert([
+              {
+                id: session.user.id,
+                email: session.user.email,
+                name: session.user.user_metadata?.name || 'User',
+                created_at: new Date().toISOString(),
+              },
+            ])
+            .select()
+            .single();
+
+          set({ 
+            user: newUser || null, 
+            session, 
+            loading: false,
+            connectionError: null
+          });
+        } else {
+          set({ 
+            user: userData, 
+            session, 
+            loading: false,
+            connectionError: null 
+          });
+        }
       } else {
         set({ loading: false, connectionError: null });
       }
 
-      // Auth state listener
+      // Set up auth state listener WITHOUT navigation
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
           console.log('Auth event:', event);
           
-          if (session?.user) {
-            // Give the trigger a moment to create the profile
-            await new Promise(resolve => setTimeout(resolve, 500));
+          if (event === 'SIGNED_IN' && session?.user) {
+            // Wait for trigger
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
             const { data: userData } = await supabase
               .from('users')
@@ -48,15 +75,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               .eq('id', session.user.id)
               .single();
 
-            set({ user: userData || null, session, connectionError: null });
-            
-            if (event === 'SIGNED_IN') {
-              router.replace('/(tabs)');
-            }
-          } else {
-            set({ user: null, session: null, connectionError: null });
-            if (event === 'SIGNED_OUT') {
-              router.replace('/(auth)/landing');
+            set({ 
+              user: userData || {
+                id: session.user.id,
+                email: session.user.email!,
+                name: session.user.user_metadata?.name || 'User',
+                created_at: new Date().toISOString(),
+              }, 
+              session,
+              connectionError: null 
+            });
+          } else if (event === 'SIGNED_OUT') {
+            set({ 
+              user: null, 
+              session: null, 
+              connectionError: null 
+            });
+          } else if (event === 'USER_UPDATED') {
+            // Refresh user data
+            if (session?.user) {
+              const { data: userData } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              if (userData) {
+                set({ user: userData });
+              }
             }
           }
         }
@@ -65,8 +111,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return () => subscription.unsubscribe();
     } catch (error: any) {
       console.error('Auth initialization error:', error);
-      set({ 
-        loading: false, 
+      set({
+        loading: false,
         connectionError: error.message || 'Cannot connect to server'
       });
     }
@@ -75,7 +121,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUp: async (email: string, password: string, name: string) => {
     try {
       set({ connectionError: null });
-
+      
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
@@ -94,21 +140,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       if (data.user) {
-        // The database trigger will automatically create the user profile
-        // Wait a moment for the trigger to execute
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // For immediate sign-in (if email confirmation is disabled in Supabase settings)
+        // For immediate sign-in (if email confirmation is disabled)
         if (data.session) {
-          // Fetch the user profile created by the trigger
+          // Wait for the database trigger to create the user profile
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Fetch the user profile
           const { data: userData } = await supabase
             .from('users')
             .select('*')
             .eq('id', data.user.id)
             .single();
 
-          set({ user: userData, session: data.session });
-          router.replace('/(tabs)');
+          // If profile doesn't exist, create it manually
+          if (!userData) {
+            const { data: newUser } = await supabase
+              .from('users')
+              .insert([
+                {
+                  id: data.user.id,
+                  email: data.user.email!,
+                  name: name.trim(),
+                  created_at: new Date().toISOString(),
+                },
+              ])
+              .select()
+              .single();
+
+            set({ user: newUser, session: data.session });
+          } else {
+            set({ user: userData, session: data.session });
+          }
         } else {
           // Email confirmation required
           throw new Error('Please check your email to confirm your account before signing in.');
@@ -135,10 +197,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (error.message.includes('Failed to fetch') || error.message.includes('Network error')) {
           throw new Error('Network error: Cannot connect to server. Please check your internet connection.');
         }
+        if (error.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid email or password. Please try again.');
+        }
         throw error;
       }
 
-      // Auth state listener will handle the rest
+      console.log('Sign in successful');
     } catch (error: any) {
       console.error('Sign in error:', error);
       const errorMessage = error.message || 'Sign in failed. Please check your credentials.';
@@ -151,6 +216,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Clear local state immediately
+      set({ user: null, session: null });
     } catch (error: any) {
       console.error('Sign out error:', error);
       throw new Error(error.message || 'Sign out failed. Please try again.');
@@ -162,7 +230,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-
       if (error) throw error;
     } catch (error: any) {
       console.error('Reset password error:', error);

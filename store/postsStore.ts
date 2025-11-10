@@ -60,8 +60,9 @@ export const usePostsStore = create<PostsState>((set, get) => ({
       // Upload image if provided
       if (imageUri) {
         const base64 = await FileSystem.readAsStringAsync(imageUri, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64',
         });
+
 
         const fileName = `posts/${user.id}_${Date.now()}.jpg`;
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -134,7 +135,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('posts')
-        .update({ 
+        .update({
           content: content.trim(),
           updated_at: new Date().toISOString()
         })

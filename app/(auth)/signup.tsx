@@ -34,29 +34,29 @@ export default function SignUpScreen() {
   });
 
   const handleSignUp = async () => {
-    const nameError = validateName(name);
-    const emailError = validateEmail(email);
-    const passwordError = validatePassword(password);
-
-    setErrors({
-      name: nameError || '',
-      email: emailError || '',
-      password: passwordError || '',
-    });
-
-    if (nameError || emailError || passwordError) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await signUp(email, password, name);
-    } catch (error: any) {
-      Alert.alert('Sign Up Failed', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const nameError = validateName(name);
+  const emailError = validateEmail(email);
+  const passwordError = validatePassword(password);
+  setErrors({
+    name: nameError || '',
+    email: emailError || '',
+    password: passwordError || '',
+  });
+  if (nameError || emailError || passwordError) {
+    return;
+  }
+  setLoading(true);
+  try {
+    await signUp(email, password, name);
+    // Navigation will be handled by the layout's useEffect
+    // Wait a moment for the auth state to update
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  } catch (error: any) {
+    Alert.alert('Sign Up Failed', error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <KeyboardAvoidingView

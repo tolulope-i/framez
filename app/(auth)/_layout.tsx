@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -6,13 +6,17 @@ import { View } from 'react-native';
 
 export default function AuthLayout() {
   const { user, loading } = useAuthStore();
+  const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user) {
+    if (loading) return;
+
+    // If user is authenticated and in auth group, redirect to tabs
+    if (user && segments[0] === '(auth)') {
       router.replace('/(tabs)');
     }
-  }, [user, loading]);
+  }, [user, loading, segments]);
 
   // Show loading while checking auth state
   if (loading) {
