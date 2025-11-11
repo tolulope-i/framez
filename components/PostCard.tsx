@@ -18,6 +18,7 @@ import { useAuthStore } from "@/store/authStore";
 import { usePostsStore } from "@/store/postsStore";
 import { Colors } from "@/constants/Colors";
 import { validatePostContent } from "@/utils/validation";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface PostCardProps {
   post: Post;
@@ -47,38 +48,30 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
   const [showOptions, setShowOptions] = useState(false);
 
   const isOwner = user?.id === post.user_id;
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleDelete = () => {
-    console.log("Delete button pressed!"); // Add this
-  setShowOptions(false); // Close modal first
+    setShowOptions(false); // close options menu
+    setShowDeleteConfirm(true); // open our custom dialog
+  };
 
-  // Add small delay to ensure modal is fully closed
-  setTimeout(() => {
-    console.log("Showing alert now..."); // Add this
-    Alert.alert(
-      "Delete Post",
-      "Are you sure you want to delete this post? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await deletePost(post.id);
-            } catch (error: any) {
-              Alert.alert("Error", error.message || "Failed to delete post");
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  }, 100); // Critical: 100ms delay
-};
+  const performDelete = async () => {
+    setShowDeleteConfirm(false);
+    try {
+      setLoading(true);
+      await deletePost(post.id);
+      // UI updates automatically via Zustand
+    } catch (error: any) {
+      // Show error with the same dialog style (or Alert on mobile)
+      if (Platform.OS === "web") {
+        alert(error.message ?? "Failed to delete post");
+      } else {
+        Alert.alert("Error", error.message ?? "Failed to delete post");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUpdate = async () => {
     const validationError = validatePostContent(editContent);
@@ -343,7 +336,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
 
                 <TouchableOpacity
                   onPress={(e) => {
-                    e.stopPropagation(); // Prevent modal close
+                    e.stopPropagation();
                     handleDelete();
                   }}
                   style={styles.optionItem}
@@ -443,6 +436,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
           </View>
         </View>
       </Modal>
+
+      {/* ----- DELETE CONFIRM DIALOG ----- */}
+      <ConfirmDialog
+        visible={showDeleteConfirm}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={performDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </View>
   );
 };

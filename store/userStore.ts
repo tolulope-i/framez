@@ -33,7 +33,7 @@ export const useUserStore = create<UserState>((set, get) => ({
 
       if (error) throw error;
 
-      
+
 
       const usersWithCounts =
         data?.map((user) => ({
@@ -52,51 +52,54 @@ export const useUserStore = create<UserState>((set, get) => ({
   },
 
   fetchUserProfile: async (userId: string) => {
-    try {
-      set({ loading: true });
+  try {
+    set({ loading: true });
 
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
 
-      const { data, error } = await supabase
-        .from("users")
-        .select(
-          `
-          *,
-          posts(count),
-          followers_count:followers!followers_following_id_fkey(count),
-          following_count:followers!followers_follower_id_fkey(count),
-          followers_list:followers!followers_following_id_fkey(follower_id)
-        `
-        )
-        .eq("id", userId)
-        .single();
+    const { data, error } = await supabase
+      .from("users")
+      .select(`
+        *,
+        posts(count),
+        followers_count:followers!followers_following_id_fkey(count),
+        following_count:followers!followers_follower_id_fkey(count)
+      `)
+      .eq("id", userId)
+      .maybeSingle(); // ← Use maybeSingle() instead of .single()
 
-      if (error) throw error;
+    if (error) throw error;
+    if (!data) throw new Error("User not found");
 
+    // Check if current user follows this profile
+    let isFollowing = false;
+    if (currentUser?.id && currentUser.id !== userId) {
       const { data: followData } = await supabase
         .from("followers")
         .select("follower_id")
-        .eq("follower_id", currentUser?.id)
+        .eq("follower_id", currentUser.id)
         .eq("following_id", userId)
-        .single();
-
-      const userWithCounts = {
-        ...data,
-        posts_count: data.posts?.[0]?.count || 0,
-        followers_count: data.followers_count?.[0]?.count || 0,
-        following_count: data.following_count?.[0]?.count || 0,
-        is_following: !!followData,
-      };
-
-      set({ currentProfile: userWithCounts, loading: false });
-    } catch (error) {
-      console.error("Fetch user profile error:", error);
-      set({ loading: false });
-      throw new Error("Failed to fetch user profile");
+        .maybeSingle();
+      isFollowing = !!followData;
     }
-  },
+
+    const userWithCounts = {
+      ...data,
+      posts_count: data.posts?.[0]?.count || 0,
+      followers_count: data.followers_count?.[0]?.count || 0,
+      following_count: data.following_count?.[0]?.count || 0,
+      is_following: isFollowing,
+    };
+
+    set({ currentProfile: userWithCounts, loading: false });
+  } catch (error: any) {
+    console.error("Fetch user profile error:", error);
+    set({ loading: false });
+    throw new Error(error.message || "Failed to fetch user profile");
+  }
+},
 
   followUser: async (userId: string) => {
     try {
@@ -126,10 +129,10 @@ export const useUserStore = create<UserState>((set, get) => ({
         users: state.users.map((u) =>
           u.id === userId
             ? {
-                ...u,
-                followers_count: (u.followers_count || 0) + 1,
-                is_following: true,
-              }
+              ...u,
+              followers_count: (u.followers_count || 0) + 1,
+              is_following: true,
+            }
             : u
         ),
       }));
@@ -172,10 +175,10 @@ export const useUserStore = create<UserState>((set, get) => ({
         users: state.users.map((u) =>
           u.id === userId
             ? {
-                ...u,
-                followers_count: Math.max(0, (u.followers_count || 1) - 1),
-                is_following: false,
-              }
+              ...u,
+              followers_count: Math.max(0, (u.followers_count || 1) - 1),
+              is_following: false,
+            }
             : u
         ),
       }));
@@ -185,6 +188,8 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 
+  // store/userStore.ts  (replace the whole function)
+
   updateProfile: async (updates: Partial<User>) => {
     try {
       const {
@@ -192,12 +197,10 @@ export const useUserStore = create<UserState>((set, get) => ({
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      if (updates.name) {
-        await supabase.auth.updateUser({
-          data: { name: updates.name },
-        });
-      }
+      // 1. Update auth user name (optional)
+     
 
+      // 2. Update the `users` row
       const { data, error } = await supabase
         .from("users")
         .update(updates)
@@ -207,15 +210,18 @@ export const useUserStore = create<UserState>((set, get) => ({
 
       if (error) throw error;
 
-      const { currentProfile } = get();
-      if (currentProfile && currentProfile.id === user.id) {
-        set({ currentProfile: { ...currentProfile, ...updates } });
-      }
+      // 3. Optimistically update the store
+      set((state) => ({
+        currentProfile:
+          state.currentProfile?.id === user.id
+            ? { ...state.currentProfile, ...updates }
+            : state.currentProfile,
+      }));
 
       return data;
     } catch (error: any) {
       console.error("Update profile error:", error);
-      throw new Error(error.message || "Failed to update profile");
+      throw error;          // <-- let the UI handle it
     }
   },
 

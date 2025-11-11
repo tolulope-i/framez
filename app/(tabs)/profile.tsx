@@ -113,18 +113,19 @@ export default function ProfileScreen() {
   };
 
   const handleUpdateProfile = async () => {
+    // Prevent double-click
+    if (loading) return;
+
     try {
-      setLoading(true);
-      await updateProfile(editForm);
-      setShowEditModal(false);
+      setLoading(true); // show "Saving..."
+      await updateProfile(editForm); // <-- now resolves or throws
+      setShowEditModal(false); // close modal
       Alert.alert("Success", "Profile updated successfully");
-      if (user) {
-        await fetchUserProfile(user.id);
-      }
+      if (user) await fetchUserProfile(user.id);
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to update profile");
     } finally {
-      setLoading(false);
+      setLoading(false); // always re-enable buttons
     }
   };
 
@@ -576,8 +577,11 @@ export default function ProfileScreen() {
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                onPress={() => setShowEditModal(false)}
-                disabled={loading}
+                onPress={() => {
+                  setShowEditModal(false);
+                  setLoading(false); // <-- safety
+                }}
+                disabled={false} // never disable cancel
                 style={[styles.button, { backgroundColor: colors.border }]}
               >
                 <Text style={[styles.buttonText, { color: colors.text }]}>
