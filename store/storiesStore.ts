@@ -124,25 +124,30 @@ export const useStoriesStore = create<StoriesState>((set, get) => ({
     }
   },
 
-  markStoryAsSeen: async (storyId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+markStoryAsSeen: async (storyId: string) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
-        .from('story_views')
-        .insert([{ user_id: user.id, story_id: storyId }]);
+    // Use upsert to avoid duplicate key violation
+    const { error } = await supabase
+      .from('story_views')
+      .upsert(
+        [{ user_id: user.id, story_id: storyId }],
+        { onConflict: ['user_id', 'story_id'] } // this matches your unique constraint
+      );
 
-      if (error) throw error;
+    if (error) throw error;
 
-      set((state) => ({
-        stories: state.stories.map((s) =>
-          s.id === storyId ? { ...s, seen: true } : s
-        ),
-      }));
-    } catch (error: any) {
-      console.error('Mark story as seen error:', error);
-      throw new Error(error.message || 'Failed to mark story as seen');
-    }
-  },
+    set((state) => ({
+      stories: state.stories.map((s) =>
+        s.id === storyId ? { ...s, seen: true } : s
+      ),
+    }));
+  } catch (error: any) {
+    console.error('Mark story as seen error:', error);
+    throw new Error(error.message || 'Failed to mark story as seen');
+  }
+},
+
 }));

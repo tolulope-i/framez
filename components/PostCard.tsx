@@ -49,6 +49,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
   const isOwner = user?.id === post.user_id;
 
   const handleDelete = () => {
+    console.log("Delete button pressed!"); // Add this
+  setShowOptions(false); // Close modal first
+
+  // Add small delay to ensure modal is fully closed
+  setTimeout(() => {
+    console.log("Showing alert now..."); // Add this
     Alert.alert(
       "Delete Post",
       "Are you sure you want to delete this post? This action cannot be undone.",
@@ -61,19 +67,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
             try {
               setLoading(true);
               await deletePost(post.id);
-              Alert.alert("Post deleted"); // This confirms deletion
             } catch (error: any) {
               Alert.alert("Error", error.message || "Failed to delete post");
             } finally {
               setLoading(false);
-              setShowOptions(false);
             }
           },
         },
       ],
       { cancelable: true }
     );
-  };
+  }, 100); // Critical: 100ms delay
+};
 
   const handleUpdate = async () => {
     const validationError = validatePostContent(editContent);
@@ -313,9 +318,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
       <Modal visible={showOptions} transparent animationType="fade">
         <TouchableOpacity
           style={styles.optionsOverlay}
+          activeOpacity={1}
           onPress={() => setShowOptions(false)}
         >
-          <View
+          {/* Prevent overlay tap when clicking inside menu */}
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()} // Critical!
             style={[styles.optionsMenu, { backgroundColor: colors.surface }]}
           >
             {isOwner && (
@@ -331,24 +340,31 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
                     Edit Post
                   </Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
-                  onPress={handleDelete}
+                  onPress={(e) => {
+                    e.stopPropagation(); // Prevent modal close
+                    handleDelete();
+                  }}
                   style={styles.optionItem}
                 >
                   <Text style={[styles.optionText, { color: colors.error }]}>
                     Delete Post
                   </Text>
                 </TouchableOpacity>
+
                 <View
                   style={[styles.separator, { backgroundColor: colors.border }]}
                 />
               </>
             )}
+
             <TouchableOpacity onPress={handleShare} style={styles.optionItem}>
               <Text style={[styles.optionText, { color: colors.text }]}>
                 Share Post
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => setShowOptions(false)}
               style={styles.optionItem}
@@ -359,7 +375,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
                 Cancel
               </Text>
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
 

@@ -18,15 +18,14 @@ interface StoriesBarProps {
   onAddStoryPress: () => void;
 }
 
-export const StoriesBar: React.FC<StoriesBarProps> = ({ 
-  onStoryPress, 
-  onAddStoryPress 
+export const StoriesBar: React.FC<StoriesBarProps> = ({
+  onStoryPress,
+  onAddStoryPress
 }) => {
   const { isDark } = useThemeStore();
   const { stories } = useStoriesStore();
   const { user } = useAuthStore();
   const colors = isDark ? Colors.dark : Colors.light;
-
   // Group stories by user
   const groupedStories = stories.reduce((acc: Record<string, Story[]>, story) => {
     const userId = story.user_id;
@@ -34,7 +33,6 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
     acc[userId].push(story);
     return acc;
   }, {});
-
   // Sort groups by latest story
   const sortedGroups = Object.entries(groupedStories)
     .sort(([, aStories], [, bStories]) => {
@@ -42,17 +40,16 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
       const bLatest = new Date(Math.max(...bStories.map(s => new Date(s.created_at).getTime())));
       return bLatest.getTime() - aLatest.getTime();
     });
-
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {/* Add Story Button */}
-        <TouchableOpacity 
-          style={styles.storyItem} 
+        <TouchableOpacity
+          style={styles.storyItem}
           onPress={onAddStoryPress}
         >
           <View style={[styles.addStoryCircle, { borderColor: colors.primary }]}>
@@ -62,7 +59,6 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
             Add Story
           </Text>
         </TouchableOpacity>
-
         {/* Own Stories if exist */}
         {groupedStories[user?.id || ''] && (
           <TouchableOpacity
@@ -71,21 +67,27 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
           >
             <View style={[
               styles.storyCircle,
-              { 
+              {
                 borderColor: groupedStories[user?.id || ''].some(s => !s.seen) ? colors.primary : colors.border,
                 borderWidth: groupedStories[user?.id || ''].some(s => !s.seen) ? 3 : 2,
               }
             ]}>
-              <Image
-                source={{ 
-                  uri: user?.profile_image_url || 'https://via.placeholder.com/100'
-                }}
-                style={styles.storyImage}
-              />
+              {user?.profile_image_url ? (
+                <Image
+                  source={{ uri: user.profile_image_url }}
+                  style={styles.storyImage}
+                />
+              ) : (
+                <View style={[styles.storyImage, { backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={styles.storyLetterText}>
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </Text>
+                </View>
+              )}
             </View>
-            <Text 
+            <Text
               style={[
-                styles.storyUsername, 
+                styles.storyUsername,
                 { color: colors.text },
                 !groupedStories[user?.id || ''].some(s => !s.seen) && { opacity: 0.7 }
               ]}
@@ -95,12 +97,10 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
             </Text>
           </TouchableOpacity>
         )}
-
         {/* Other Users' Stories */}
         {sortedGroups.filter(([userId]) => userId !== user?.id).map(([userId, userStories]) => {
-          const user = userStories[0].user;
+          const storyUser = userStories[0].user;
           const hasUnseen = userStories.some(s => !s.seen);
-
           return (
             <TouchableOpacity
               key={userId}
@@ -109,27 +109,33 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
             >
               <View style={[
                 styles.storyCircle,
-                { 
+                {
                   borderColor: hasUnseen ? colors.primary : colors.border,
                   borderWidth: hasUnseen ? 3 : 2,
                 }
               ]}>
-                <Image
-                  source={{ 
-                    uri: user?.profile_image_url || 'https://via.placeholder.com/100'
-                  }}
-                  style={styles.storyImage}
-                />
+                {storyUser?.profile_image_url ? (
+                  <Image
+                    source={{ uri: storyUser.profile_image_url }}
+                    style={styles.storyImage}
+                  />
+                ) : (
+                  <View style={[styles.storyImage, { backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }]}>
+                    <Text style={styles.storyLetterText}>
+                      {storyUser?.name?.charAt(0).toUpperCase() || 'U'}
+                    </Text>
+                  </View>
+                )}
               </View>
-              <Text 
+              <Text
                 style={[
-                  styles.storyUsername, 
+                  styles.storyUsername,
                   { color: colors.text },
                   !hasUnseen && { opacity: 0.7 }
                 ]}
                 numberOfLines={1}
               >
-                {user?.name.split(' ')[0]}
+                {storyUser?.name.split(' ')[0]}
               </Text>
             </TouchableOpacity>
           );
@@ -182,15 +188,14 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 15,
   },
+  storyLetterText: {
+    color: '#FFF',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
   storyUsername: {
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
   },
-  profileImage: {
-  width: 40,
-  height: 40,
-  borderRadius: 20,
-  marginRight: 12,
-},
 });
