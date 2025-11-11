@@ -21,15 +21,24 @@ import { useUserStore } from "@/store/userStore";
 import { useThemeStore } from "@/store/themeStore";
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
-import { Post } from "@/types";
+import { Post, User } from "@/types";
+import { router } from "expo-router";
 
-type ProfileTab = "posts" | "images" | "saved";
+// ✅ Remove "images" from the type
+type ProfileTab = "posts" | "saved";
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const { userPosts, savedPosts, fetchUserPosts, fetchSavedPosts } =
     usePostsStore();
-  const { updateProfile, uploadProfileImage } = useUserStore();
+  const {
+    currentProfile,
+    fetchUserProfile,
+    followUser,
+    unfollowUser,
+    updateProfile,
+    uploadProfileImage,
+  } = useUserStore();
   const { isDark } = useThemeStore();
   const colors = isDark ? Colors.dark : Colors.light;
 
@@ -38,19 +47,18 @@ export default function ProfileScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: user?.name || "",
-    bio: user?.bio || "",
-    website: user?.website || "",
-    location: user?.location || "",
+    name: "",
+    bio: "",
+    website: "",
+    location: "",
   });
 
   const loadProfileData = useCallback(async () => {
     if (!user) return;
-
     setLoading(true);
     try {
       if (activeTab === "posts") {
-        await fetchUserPosts(user.id);
+        await fetchUserPosts(currentProfile?.id || user.id);
       } else if (activeTab === "saved") {
         await fetchSavedPosts();
       }
@@ -59,13 +67,28 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false);
     }
-  }, [user, activeTab, fetchUserPosts, fetchSavedPosts]);
+  }, [user, currentProfile, activeTab, fetchUserPosts, fetchSavedPosts]);
+
+  useEffect(() => {
+    if (user && !currentProfile) {
+      fetchUserProfile(user.id);
+    }
+  }, [user, currentProfile, fetchUserProfile]);
 
   useEffect(() => {
     if (user) {
+      setEditForm({
+        name: currentProfile?.name || user.name || "",
+        bio: currentProfile?.bio || "",
+        website: currentProfile?.website || "",
+        location: currentProfile?.location || "",
+      });
       loadProfileData();
     }
-  }, [user, activeTab, loadProfileData]);
+  }, [currentProfile, activeTab, user, loadProfileData]);
+
+  const profileUser: User | null = currentProfile || user;
+  const isOwnProfile = profileUser?.id === user?.id;
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -85,12 +108,6 @@ export default function ProfileScreen() {
   };
 
   const handleEditProfile = () => {
-    setEditForm({
-      name: user?.name || "",
-      bio: user?.bio || "",
-      website: user?.website || "",
-      location: user?.location || "",
-    });
     setShowEditModal(true);
     setShowOptions(false);
   };
@@ -101,6 +118,9 @@ export default function ProfileScreen() {
       await updateProfile(editForm);
       setShowEditModal(false);
       Alert.alert("Success", "Profile updated successfully");
+      if (user) {
+        await fetchUserProfile(user.id);
+      }
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to update profile");
     } finally {
@@ -119,14 +139,12 @@ export default function ProfileScreen() {
         );
         return;
       }
-
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
       });
-
       if (!result.canceled && result.assets[0]) {
         setLoading(true);
         await uploadProfileImage(result.assets[0].uri);
@@ -140,12 +158,24 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleFollowToggle = async () => {
+    if (!profileUser) return;
+    try {
+      if (profileUser.is_following) {
+        await unfollowUser(profileUser.id);
+      } else {
+        await followUser(profileUser.id);
+      }
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to update follow status");
+    }
+  };
+
+  // ✅ Simplified getDisplayData — removed "images"
   const getDisplayData = () => {
     switch (activeTab) {
       case "posts":
         return userPosts;
-      case "images":
-        return userPosts.filter((post) => post.image_url);
       case "saved":
         return savedPosts;
       default:
@@ -154,26 +184,20 @@ export default function ProfileScreen() {
   };
 
   const renderPost = useCallback(
-    ({ item }: { item: Post }) => <PostCard post={item} />,
-    []
-  );
-
-  const renderImageGrid = useCallback(
     ({ item }: { item: Post }) => (
-      <TouchableOpacity style={styles.imageGridItem}>
-        <Image
-          source={{ uri: item.image_url }}
-          style={styles.gridImage}
-          resizeMode="cover"
-        />
-      </TouchableOpacity>
+      <PostCard
+        post={item}
+        onUserPress={(userId) =>
+          fetchUserProfile(userId).then(() => router.push("/(tabs)/profile"))
+        }
+      />
     ),
-    []
+    [fetchUserProfile]
   );
 
   const displayData = getDisplayData();
 
-  if (!user) {
+  if (!profileUser) {
     return <LoadingSpinner />;
   }
 
@@ -185,7 +209,7 @@ export default function ProfileScreen() {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.surface }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>
-          {user.name}
+          {profileUser.name}
         </Text>
         <TouchableOpacity onPress={() => setShowOptions(true)}>
           <Text style={[styles.optionsButton, { color: colors.text }]}>
@@ -206,52 +230,75 @@ export default function ProfileScreen() {
 
           <View style={styles.profileInfo}>
             {/* Profile Image */}
-            <TouchableOpacity
-              onPress={handleUploadProfileImage}
-              style={styles.profileImageContainer}
-            >
-              {user.profile_image_url ? (
-                <Image
-                  source={{ uri: user.profile_image_url }}
-                  style={styles.profileImage}
-                />
-              ) : (
-                <View
-                  style={[
-                    styles.profileImage,
-                    { backgroundColor: colors.primary },
-                  ]}
-                >
-                  <Text style={styles.profileImageText}>
-                    {user.name?.charAt(0).toUpperCase() || "U"}
-                  </Text>
+            {isOwnProfile && (
+              <TouchableOpacity
+                onPress={handleUploadProfileImage}
+                style={styles.profileImageContainer}
+              >
+                {profileUser.profile_image_url ? (
+                  <Image
+                    source={{ uri: profileUser.profile_image_url }}
+                    style={styles.profileImage}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.profileImage,
+                      { backgroundColor: colors.primary },
+                    ]}
+                  >
+                    <Text style={styles.profileImageText}>
+                      {profileUser.name?.charAt(0).toUpperCase() || "U"}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.editImageOverlay}>
+                  <Text style={styles.editImageText}>📷</Text>
                 </View>
-              )}
-              <View style={styles.editImageOverlay}>
-                <Text style={styles.editImageText}>📷</Text>
+              </TouchableOpacity>
+            )}
+            {!isOwnProfile && (
+              <View style={styles.profileImageContainer}>
+                {profileUser.profile_image_url ? (
+                  <Image
+                    source={{ uri: profileUser.profile_image_url }}
+                    style={styles.profileImage}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.profileImage,
+                      { backgroundColor: colors.primary },
+                    ]}
+                  >
+                    <Text style={styles.profileImageText}>
+                      {profileUser.name?.charAt(0).toUpperCase() || "U"}
+                    </Text>
+                  </View>
+                )}
               </View>
-            </TouchableOpacity>
+            )}
 
             {/* User Info */}
             <Text style={[styles.name, { color: colors.text }]}>
-              {user.name}
+              {profileUser.name}
             </Text>
 
-            {user.bio && (
+            {profileUser.bio && (
               <Text style={[styles.bio, { color: colors.textSecondary }]}>
-                {user.bio}
+                {profileUser.bio}
               </Text>
             )}
 
             <View style={styles.userDetails}>
-              {user.website && (
+              {profileUser.website && (
                 <Text style={[styles.detail, { color: colors.primary }]}>
-                  🌐 {user.website}
+                  🌐 {profileUser.website}
                 </Text>
               )}
-              {user.location && (
+              {profileUser.location && (
                 <Text style={[styles.detail, { color: colors.textSecondary }]}>
-                  📍 {user.location}
+                  📍 {profileUser.location}
                 </Text>
               )}
             </View>
@@ -260,7 +307,7 @@ export default function ProfileScreen() {
             <View style={styles.statsContainer}>
               <View style={styles.stat}>
                 <Text style={[styles.statNumber, { color: colors.text }]}>
-                  {userPosts.length}
+                  {profileUser.posts_count || 0}
                 </Text>
                 <Text
                   style={[styles.statLabel, { color: colors.textSecondary }]}
@@ -270,7 +317,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.stat}>
                 <Text style={[styles.statNumber, { color: colors.text }]}>
-                  {user.followers_count || 0}
+                  {profileUser.followers_count || 0}
                 </Text>
                 <Text
                   style={[styles.statLabel, { color: colors.textSecondary }]}
@@ -280,7 +327,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.stat}>
                 <Text style={[styles.statNumber, { color: colors.text }]}>
-                  {user.following_count || 0}
+                  {profileUser.following_count || 0}
                 </Text>
                 <Text
                   style={[styles.statLabel, { color: colors.textSecondary }]}
@@ -289,14 +336,38 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             </View>
+
+            {/* Follow Button if not own */}
+            {!isOwnProfile && (
+              <TouchableOpacity
+                onPress={handleFollowToggle}
+                style={[
+                  styles.followButton,
+                  {
+                    backgroundColor: profileUser.is_following
+                      ? colors.border
+                      : colors.primary,
+                  },
+                ]}
+              >
+                <Text
+                  style={{
+                    color: profileUser.is_following ? colors.text : "#FFF",
+                    fontWeight: "600",
+                  }}
+                >
+                  {profileUser.is_following ? "Unfollow" : "Follow"}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
-        {/* Tabs */}
+        {/* ✅ Tabs – removed "images" */}
         <View
           style={[styles.tabsContainer, { backgroundColor: colors.surface }]}
         >
-          {(["posts", "images", "saved"] as ProfileTab[]).map((tab) => (
+          {(["posts", "saved"] as ProfileTab[]).map((tab) => (
             <TouchableOpacity
               key={tab}
               onPress={() => setActiveTab(tab)}
@@ -322,18 +393,9 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Content */}
+        {/* ✅ Simplified content rendering (no images grid) */}
         {loading && displayData.length === 0 ? (
           <LoadingSpinner />
-        ) : activeTab === "images" ? (
-          <FlatList
-            data={displayData}
-            keyExtractor={(item) => item.id}
-            renderItem={renderImageGrid}
-            numColumns={3}
-            contentContainerStyle={styles.gridContent}
-            scrollEnabled={false}
-          />
         ) : (
           <FlatList
             data={displayData}
@@ -349,8 +411,6 @@ export default function ProfileScreen() {
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               {activeTab === "posts" &&
                 "No posts yet. Start sharing your moments!"}
-              {activeTab === "images" &&
-                "No images yet. Share your first photo!"}
               {activeTab === "saved" &&
                 "No saved posts yet. Start saving your favorite content!"}
             </Text>
@@ -367,30 +427,39 @@ export default function ProfileScreen() {
           <View
             style={[styles.optionsMenu, { backgroundColor: colors.surface }]}
           >
-            <TouchableOpacity
-              onPress={handleEditProfile}
-              style={styles.optionItem}
-            >
-              <Text style={[styles.optionText, { color: colors.text }]}>
-                Edit Profile
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleUploadProfileImage}
-              style={styles.optionItem}
-            >
-              <Text style={[styles.optionText, { color: colors.text }]}>
-                Change Profile Photo
-              </Text>
-            </TouchableOpacity>
-            <View
-              style={[styles.separator, { backgroundColor: colors.border }]}
-            />
-            <TouchableOpacity onPress={handleLogout} style={styles.optionItem}>
-              <Text style={[styles.optionText, { color: colors.error }]}>
-                Logout
-              </Text>
-            </TouchableOpacity>
+            {isOwnProfile && (
+              <>
+                <TouchableOpacity
+                  onPress={handleEditProfile}
+                  style={styles.optionItem}
+                >
+                  <Text style={[styles.optionText, { color: colors.text }]}>
+                    Edit Profile
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleUploadProfileImage}
+                  style={styles.optionItem}
+                >
+                  <Text style={[styles.optionText, { color: colors.text }]}>
+                    Change Profile Photo
+                  </Text>
+                </TouchableOpacity>
+                <View
+                  style={[styles.separator, { backgroundColor: colors.border }]}
+                />
+              </>
+            )}
+            {isOwnProfile && (
+              <TouchableOpacity
+                onPress={handleLogout}
+                style={styles.optionItem}
+              >
+                <Text style={[styles.optionText, { color: colors.error }]}>
+                  Logout
+                </Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               onPress={() => setShowOptions(false)}
               style={styles.optionItem}
@@ -533,6 +602,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  // ... (styles remain the same as provided, add if needed)
   container: {
     flex: 1,
   },
@@ -747,5 +817,11 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  followButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 24,
   },
 });

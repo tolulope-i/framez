@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,15 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Platform,
   Share,
-} from 'react-native';
-import { Post } from '@/types';
-import { useThemeStore } from '@/store/themeStore';
-import { useAuthStore } from '@/store/authStore';
-import { usePostsStore } from '@/store/postsStore';
-import { Colors } from '@/constants/Colors';
-import { validatePostContent } from '@/utils/validation';
+} from "react-native";
+import { Post } from "@/types";
+import { useThemeStore } from "@/store/themeStore";
+import { useAuthStore } from "@/store/authStore";
+import { usePostsStore } from "@/store/postsStore";
+import { Colors } from "@/constants/Colors";
+import { validatePostContent } from "@/utils/validation";
 
 interface PostCardProps {
   post: Post;
@@ -26,55 +27,57 @@ interface PostCardProps {
 export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
   const { isDark } = useThemeStore();
   const { user } = useAuthStore();
-  const { 
-    deletePost, 
-    updatePost, 
-    likePost, 
-    unlikePost, 
-    savePost, 
+  const {
+    deletePost,
+    updatePost,
+    likePost,
+    unlikePost,
+    savePost,
     unsavePost,
-    addComment 
+    addComment,
   } = usePostsStore();
   const colors = isDark ? Colors.dark : Colors.light;
 
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
-  const [editError, setEditError] = useState('');
+  const [editError, setEditError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const [commentText, setCommentText] = useState('');
+  const [commentText, setCommentText] = useState("");
   const [showOptions, setShowOptions] = useState(false);
 
   const isOwner = user?.id === post.user_id;
 
   const handleDelete = () => {
     Alert.alert(
-      'Delete Post',
-      'Are you sure you want to delete this post? This action cannot be undone.',
+      "Delete Post",
+      "Are you sure you want to delete this post? This action cannot be undone.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
             try {
               setLoading(true);
               await deletePost(post.id);
+              Alert.alert("Post deleted"); // This confirms deletion
             } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete post');
+              Alert.alert("Error", error.message || "Failed to delete post");
             } finally {
               setLoading(false);
               setShowOptions(false);
             }
           },
         },
-      ]
+      ],
+      { cancelable: true }
     );
   };
 
   const handleUpdate = async () => {
     const validationError = validatePostContent(editContent);
-    
+
     if (validationError) {
       setEditError(validationError);
       return;
@@ -84,10 +87,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
     try {
       await updatePost(post.id, editContent.trim());
       setIsEditing(false);
-      setEditError('');
+      setEditError("");
       setShowOptions(false);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update post');
+      Alert.alert("Error", error.message || "Failed to update post");
     } finally {
       setLoading(false);
     }
@@ -101,7 +104,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
         await likePost(post.id);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update like');
+      Alert.alert("Error", error.message || "Failed to update like");
     }
   };
 
@@ -113,18 +116,34 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
         await savePost(post.id);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update save');
+      Alert.alert("Error", error.message || "Failed to update save");
     }
   };
 
   const handleShare = async () => {
     try {
-      await Share.share({
-        message: `Check out this post from ${post.user?.name} on Framez: ${post.content}`,
+      const message = `Check out this post from ${post.user?.name} on Framez: ${post.content}`;
+      const shareOptions = {
+        title: "Framez Post",
+        message,
         url: post.image_url,
-      });
-    } catch (error) {
-      console.error('Error sharing post:', error);
+      };
+
+      if (Platform.OS === "web") {
+        if (navigator.share) {
+          await navigator.share(shareOptions);
+        } else {
+          await navigator.clipboard.writeText(
+            `${message} ${post.image_url || ""}`
+          );
+          Alert.alert("Copied to clipboard");
+        }
+      } else {
+        await Share.share(shareOptions);
+      }
+    } catch (error: any) {
+      console.error("Error sharing post:", error);
+      Alert.alert("Error", "Failed to share post");
     }
   };
 
@@ -133,9 +152,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
 
     try {
       await addComment(post.id, commentText.trim());
-      setCommentText('');
+      setCommentText("");
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to add comment');
+      Alert.alert("Error", error.message || "Failed to add comment");
     }
   };
 
@@ -147,17 +166,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return 'Just now';
+    if (minutes < 1) return "Just now";
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
-    
+
     return date.toLocaleDateString();
   };
 
   const cancelEdit = () => {
     setEditContent(post.content);
-    setEditError('');
+    setEditError("");
     setIsEditing(false);
     setShowOptions(false);
   };
@@ -166,19 +185,26 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.userInfo}
           onPress={() => onUserPress?.(post.user_id)}
           disabled={!onUserPress}
         >
-          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-            <Text style={styles.avatarText}>
-              {post.user?.name?.charAt(0).toUpperCase() || 'U'}
-            </Text>
-          </View>
+          {post.user?.profile_image_url ? (
+            <Image
+              source={{ uri: post.user.profile_image_url }}
+              style={styles.profileImage}
+            />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+              <Text style={styles.avatarText}>
+                {post.user?.name?.charAt(0).toUpperCase() || "U"}
+              </Text>
+            </View>
+          )}
           <View style={styles.userDetails}>
             <Text style={[styles.name, { color: colors.text }]}>
-              {post.user?.name || 'Unknown User'}
+              {post.user?.name || "Unknown User"}
             </Text>
             <Text style={[styles.time, { color: colors.textSecondary }]}>
               {formatDate(post.created_at)}
@@ -196,9 +222,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
 
       {/* Image */}
       {post.image_url && (
-        <Image 
-          source={{ uri: post.image_url }} 
-          style={styles.image} 
+        <Image
+          source={{ uri: post.image_url }}
+          style={styles.image}
           resizeMode="cover"
         />
       )}
@@ -212,16 +238,21 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
       <View style={styles.actions}>
         <View style={styles.leftActions}>
           <TouchableOpacity onPress={handleLike} style={styles.actionButton}>
-            <Text style={[styles.actionIcon, { color: post.is_liked ? colors.error : colors.text }]}>
-              {post.is_liked ? '❤️' : '🤍'}
+            <Text
+              style={[
+                styles.actionIcon,
+                { color: post.is_liked ? colors.error : colors.text },
+              ]}
+            >
+              {post.is_liked ? "❤️" : "🤍"}
             </Text>
             <Text style={[styles.actionCount, { color: colors.textSecondary }]}>
               {post.likes_count || 0}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={() => setShowComments(!showComments)} 
+          <TouchableOpacity
+            onPress={() => setShowComments(!showComments)}
             style={styles.actionButton}
           >
             <Text style={[styles.actionIcon, { color: colors.text }]}>💬</Text>
@@ -236,8 +267,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
         </View>
 
         <TouchableOpacity onPress={handleSave} style={styles.actionButton}>
-          <Text style={[styles.actionIcon, { color: post.is_saved ? colors.primary : colors.text }]}>
-            {post.is_saved ? '🔖' : '📑'}
+          <Text
+            style={[
+              styles.actionIcon,
+              { color: post.is_saved ? colors.primary : colors.text },
+            ]}
+          >
+            {post.is_saved ? "🔖" : "📑"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -245,6 +281,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
       {/* Comments Section */}
       {showComments && (
         <View style={styles.commentsSection}>
+          {post.comments?.map((comment) => (
+            <View key={comment.id} style={styles.comment}>
+              <Text style={[styles.commentAuthor, { color: colors.text }]}>
+                {comment.user?.name || "Anonymous"}:
+              </Text>
+              <Text style={[styles.commentContent, { color: colors.text }]}>
+                {comment.content}
+              </Text>
+            </View>
+          ))}
           <TextInput
             style={[
               styles.commentInput,
@@ -265,11 +311,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
 
       {/* Options Modal */}
       <Modal visible={showOptions} transparent animationType="fade">
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.optionsOverlay}
           onPress={() => setShowOptions(false)}
         >
-          <View style={[styles.optionsMenu, { backgroundColor: colors.surface }]}>
+          <View
+            style={[styles.optionsMenu, { backgroundColor: colors.surface }]}
+          >
             {isOwner && (
               <>
                 <TouchableOpacity
@@ -291,7 +339,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
                     Delete Post
                   </Text>
                 </TouchableOpacity>
-                <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                <View
+                  style={[styles.separator, { backgroundColor: colors.border }]}
+                />
               </>
             )}
             <TouchableOpacity onPress={handleShare} style={styles.optionItem}>
@@ -299,11 +349,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
                 Share Post
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => setShowOptions(false)} 
+            <TouchableOpacity
+              onPress={() => setShowOptions(false)}
               style={styles.optionItem}
             >
-              <Text style={[styles.optionText, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.optionText, { color: colors.textSecondary }]}
+              >
                 Cancel
               </Text>
             </TouchableOpacity>
@@ -314,7 +366,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
       {/* Edit Modal */}
       <Modal visible={isEditing} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
+          >
             <Text style={[styles.modalTitle, { color: colors.text }]}>
               Edit Post
             </Text>
@@ -331,7 +385,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
               value={editContent}
               onChangeText={(text) => {
                 setEditContent(text);
-                if (editError) setEditError('');
+                if (editError) setEditError("");
               }}
               multiline
               placeholder="What's on your mind?"
@@ -339,7 +393,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
               maxLength={500}
               editable={!loading}
             />
-            
+
             {editError ? (
               <Text style={[styles.error, { color: colors.error }]}>
                 {editError}
@@ -364,7 +418,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
                 {loading ? (
                   <ActivityIndicator color="#FFF" size="small" />
                 ) : (
-                  <Text style={[styles.buttonText, { color: '#FFF' }]}>
+                  <Text style={[styles.buttonText, { color: "#FFF" }]}>
                     Update
                   </Text>
                 )}
@@ -382,21 +436,21 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 12,
     padding: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   userDetails: {
@@ -406,18 +460,18 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   avatarText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   name: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 2,
   },
   time: {
@@ -428,10 +482,10 @@ const styles = StyleSheet.create({
   },
   optionsText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   image: {
-    width: '100%',
+    width: "100%",
     height: 400,
     borderRadius: 8,
     marginBottom: 12,
@@ -442,19 +496,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   leftActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   actionIcon: {
@@ -462,10 +516,24 @@ const styles = StyleSheet.create({
   },
   actionCount: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   commentsSection: {
     marginTop: 8,
+  },
+  comment: {
+    flexDirection: "row",
+    marginBottom: 8,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.05)",
+  },
+  commentAuthor: {
+    fontWeight: "600",
+    marginRight: 4,
+  },
+  commentContent: {
+    flex: 1,
   },
   commentInput: {
     borderWidth: 1,
@@ -476,12 +544,12 @@ const styles = StyleSheet.create({
   },
   optionsOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   optionsMenu: {
-    width: '80%',
+    width: "80%",
     borderRadius: 12,
     padding: 8,
   },
@@ -491,7 +559,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   separator: {
     height: 1,
@@ -499,8 +567,8 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
     padding: 20,
   },
   modalContent: {
@@ -509,9 +577,9 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   input: {
     borderWidth: 1,
@@ -519,7 +587,7 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 16,
     minHeight: 120,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     marginBottom: 8,
   },
   error: {
@@ -527,20 +595,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 12,
   },
   button: {
     flex: 1,
     padding: 16,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 50,
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
   },
 });

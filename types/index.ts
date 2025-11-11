@@ -26,6 +26,8 @@ export interface Post {
   comments_count?: number;
   is_liked?: boolean;
   is_saved?: boolean;
+    comments?: Comment[]; 
+
 }
 
 export interface Comment {

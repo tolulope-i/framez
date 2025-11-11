@@ -15,17 +15,16 @@ export const useStoriesStore = create<StoriesState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Get stories from last 24 hours
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const now = new Date().toISOString();
 
       const { data, error } = await supabase
         .from('stories')
         .select(`
           *,
           user:users(*),
-          story_views!inner(user_id)
+          story_views!story_views_story_id_fkey (user_id)
         `)
-        .gt('created_at', twentyFourHoursAgo)
+        .gt('expires_at', now)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -47,7 +46,7 @@ export const useStoriesStore = create<StoriesState>((set, get) => ({
     try {
       set({ loading: true });
       
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const now = new Date().toISOString();
 
       const { data, error } = await supabase
         .from('stories')
@@ -56,7 +55,7 @@ export const useStoriesStore = create<StoriesState>((set, get) => ({
           user:users(*)
         `)
         .eq('user_id', userId)
-        .gt('created_at', twentyFourHoursAgo)
+        .gt('expires_at', now)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -82,6 +81,8 @@ export const useStoriesStore = create<StoriesState>((set, get) => ({
           {
             user_id: user.id,
             image_url: imageUrl,
+            created_at: new Date().toISOString(),
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           },
         ])
         .select(`

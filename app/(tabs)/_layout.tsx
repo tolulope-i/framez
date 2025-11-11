@@ -1,5 +1,5 @@
 import { Tabs, useRouter, useSegments } from "expo-router";
-import { Text, View } from "react-native";
+import { Text, View, Dimensions, Platform } from "react-native";
 import { useThemeStore } from "@/store/themeStore";
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/store/authStore";
@@ -13,10 +13,12 @@ export default function TabsLayout() {
   const router = useRouter();
   const colors = isDark ? Colors.dark : Colors.light;
 
+  const windowWidth = Dimensions.get('window').width;
+  const isWebLarge = Platform.OS === 'web' && windowWidth > 768;
+
   useEffect(() => {
     if (loading) return;
 
-    // If user is not authenticated and in tabs group, redirect to auth
     if (!user && segments[0] === "(tabs)") {
       router.replace("/(auth)/landing");
     }
@@ -31,7 +33,7 @@ export default function TabsLayout() {
   }
 
   if (!user) {
-    return null; // Will redirect due to useEffect
+    return null;
   }
 
   return (
@@ -45,6 +47,7 @@ export default function TabsLayout() {
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,
+          display: isWebLarge ? 'none' : 'flex',
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,

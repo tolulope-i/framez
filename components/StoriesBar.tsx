@@ -11,9 +11,10 @@ import { Story } from '@/types';
 import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/Colors';
 import { useStoriesStore } from '@/store/storiesStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface StoriesBarProps {
-  onStoryPress: (story: Story) => void;
+  onStoryPress: (stories: Story[]) => void;
   onAddStoryPress: () => void;
 }
 
@@ -23,7 +24,24 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
 }) => {
   const { isDark } = useThemeStore();
   const { stories } = useStoriesStore();
+  const { user } = useAuthStore();
   const colors = isDark ? Colors.dark : Colors.light;
+
+  // Group stories by user
+  const groupedStories = stories.reduce((acc: Record<string, Story[]>, story) => {
+    const userId = story.user_id;
+    if (!acc[userId]) acc[userId] = [];
+    acc[userId].push(story);
+    return acc;
+  }, {});
+
+  // Sort groups by latest story
+  const sortedGroups = Object.entries(groupedStories)
+    .sort(([, aStories], [, bStories]) => {
+      const aLatest = new Date(Math.max(...aStories.map(s => new Date(s.created_at).getTime())));
+      const bLatest = new Date(Math.max(...bStories.map(s => new Date(s.created_at).getTime())));
+      return bLatest.getTime() - aLatest.getTime();
+    });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -41,29 +59,26 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
             <Text style={[styles.addStoryText, { color: colors.primary }]}>+</Text>
           </View>
           <Text style={[styles.storyUsername, { color: colors.text }]}>
-            Your Story
+            Add Story
           </Text>
         </TouchableOpacity>
 
-        {/* Other Stories */}
-        {stories.map((story) => (
+        {/* Own Stories if exist */}
+        {groupedStories[user?.id || ''] && (
           <TouchableOpacity
-            key={story.id}
             style={styles.storyItem}
-            onPress={() => onStoryPress(story)}
+            onPress={() => onStoryPress(groupedStories[user?.id || ''])}
           >
             <View style={[
               styles.storyCircle,
               { 
-                borderColor: story.seen ? colors.border : colors.primary,
-                borderWidth: story.seen ? 2 : 3,
+                borderColor: groupedStories[user?.id || ''].some(s => !s.seen) ? colors.primary : colors.border,
+                borderWidth: groupedStories[user?.id || ''].some(s => !s.seen) ? 3 : 2,
               }
             ]}>
               <Image
                 source={{ 
-                  uri: story.user?.profile_image_url || 
-                       story.user?.avatar_url || 
-                       'https://via.placeholder.com/100'
+                  uri: user?.profile_image_url || 'https://via.placeholder.com/100'
                 }}
                 style={styles.storyImage}
               />
@@ -72,14 +87,53 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
               style={[
                 styles.storyUsername, 
                 { color: colors.text },
-                story.seen && { opacity: 0.7 }
+                !groupedStories[user?.id || ''].some(s => !s.seen) && { opacity: 0.7 }
               ]}
               numberOfLines={1}
             >
-              {story.user?.name.split(' ')[0]}
+              You
             </Text>
           </TouchableOpacity>
-        ))}
+        )}
+
+        {/* Other Users' Stories */}
+        {sortedGroups.filter(([userId]) => userId !== user?.id).map(([userId, userStories]) => {
+          const user = userStories[0].user;
+          const hasUnseen = userStories.some(s => !s.seen);
+
+          return (
+            <TouchableOpacity
+              key={userId}
+              style={styles.storyItem}
+              onPress={() => onStoryPress(userStories)}
+            >
+              <View style={[
+                styles.storyCircle,
+                { 
+                  borderColor: hasUnseen ? colors.primary : colors.border,
+                  borderWidth: hasUnseen ? 3 : 2,
+                }
+              ]}>
+                <Image
+                  source={{ 
+                    uri: user?.profile_image_url || 'https://via.placeholder.com/100'
+                  }}
+                  style={styles.storyImage}
+                />
+              </View>
+              <Text 
+                style={[
+                  styles.storyUsername, 
+                  { color: colors.text },
+                  !hasUnseen && { opacity: 0.7 }
+                ]}
+                numberOfLines={1}
+              >
+                {user?.name.split(' ')[0]}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -87,7 +141,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 12,
+    paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.1)',
   },
@@ -126,11 +180,17 @@ const styles = StyleSheet.create({
   storyImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 32,
+    borderRadius: 15,
   },
   storyUsername: {
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
   },
+  profileImage: {
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  marginRight: 12,
+},
 });

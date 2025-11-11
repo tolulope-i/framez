@@ -12,22 +12,27 @@ import { router } from 'expo-router';
 import { useThemeStore } from '@/store/themeStore';
 import { useUserStore } from '@/store/userStore';
 import { usePostsStore } from '@/store/postsStore';
+import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/Colors';
 import { User, Post } from '@/types';
 import { PostCard } from '@/components/PostCard';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { supabase } from '@/services/supabase';
 
 type SearchTab = 'users' | 'posts';
 
 export default function SearchScreen() {
   const { isDark } = useThemeStore();
-  const { users, searchUsers, followUser, unfollowUser, loading } = useUserStore();
-  const { posts, fetchPosts } = usePostsStore();
+  const { users, searchUsers, followUser, unfollowUser, loading: userLoading } = useUserStore();
+  const { posts } = usePostsStore();
+  const { user: currentUser } = useAuthStore();
   const colors = isDark ? Colors.dark : Colors.light;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('users');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [searchedPosts, setSearchedPosts] = useState<Post[]>([]);
+  const [postLoading, setPostLoading] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -42,14 +47,46 @@ export default function SearchScreen() {
     if (debouncedQuery.trim()) {
       if (activeTab === 'users') {
         searchUsers(debouncedQuery);
+      } else if (activeTab === 'posts') {
+        searchPosts(debouncedQuery);
       }
     } else {
-      // Load initial posts when no search query
-      if (activeTab === 'posts' && posts.length === 0) {
-        fetchPosts();
-      }
+      setSearchedPosts([]);
     }
-  }, [debouncedQuery, activeTab, searchUsers, fetchPosts, posts.length]);
+  }, [debouncedQuery, activeTab, searchUsers]);
+
+  const searchPosts = async (query: string) => {
+    setPostLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          user:users(*),
+          likes(user_id),
+          comments( *, user:users(name, profile_image_url) ),
+          saved_posts(user_id)
+        `)
+        .ilike('content', `%${query}%`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const transformedPosts: Post[] = (data || []).map((post: any) => ({
+        ...post,
+        likes_count: post.likes?.length || 0,
+        comments_count: post.comments?.length || 0,
+        is_liked: post.likes?.some((like: any) => like.user_id === currentUser?.id) || false,
+        is_saved: post.saved_posts?.some((saved: any) => saved.user_id === currentUser?.id) || false
+      }));
+
+      setSearchedPosts(transformedPosts);
+    } catch (error) {
+      console.error('Search posts error:', error);
+    } finally {
+      setPostLoading(false);
+    }
+  };
 
   const handleUserPress = useCallback((userId: string) => {
     router.push('/(tabs)/profile');
@@ -129,6 +166,8 @@ export default function SearchScreen() {
     </View>
   );
 
+  const displayPosts = debouncedQuery.trim() ? searchedPosts : posts;
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -191,36 +230,34 @@ export default function SearchScreen() {
       </View>
 
       {/* Content */}
-      {loading && activeTab === 'users' && debouncedQuery.trim() ? (
-        <LoadingSpinner />
+      {activeTab === 'users' ? (
+        userLoading && debouncedQuery.trim() ? <LoadingSpinner /> : (
+          <FlatList
+            data={users}
+            keyExtractor={(item) => item.id}
+            renderItem={renderUserItem}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={renderEmptyState}
+            showsVerticalScrollIndicator={false}
+            initialNumToRender={10}
+            maxToRenderPerBatch={15}
+            windowSize={10}
+          />
+        )
       ) : (
-        <>
-          {activeTab === 'users' ? (
-            <FlatList
-              data={users}
-              keyExtractor={(item) => item.id}
-              renderItem={renderUserItem}
-              contentContainerStyle={styles.listContent}
-              ListEmptyComponent={renderEmptyState}
-              showsVerticalScrollIndicator={false}
-              initialNumToRender={10}
-              maxToRenderPerBatch={15}
-              windowSize={10}
-            />
-          ) : (
-            <FlatList
-              data={posts}
-              keyExtractor={(item) => item.id}
-              renderItem={renderPostItem}
-              contentContainerStyle={styles.listContent}
-              ListEmptyComponent={renderEmptyState}
-              showsVerticalScrollIndicator={false}
-              initialNumToRender={10}
-              maxToRenderPerBatch={15}
-              windowSize={10}
-            />
-          )}
-        </>
+        postLoading && debouncedQuery.trim() ? <LoadingSpinner /> : (
+          <FlatList
+            data={displayPosts}
+            keyExtractor={(item) => item.id}
+            renderItem={renderPostItem}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={renderEmptyState}
+            showsVerticalScrollIndicator={false}
+            initialNumToRender={10}
+            maxToRenderPerBatch={15}
+            windowSize={10}
+          />
+        )
       )}
     </SafeAreaView>
   );

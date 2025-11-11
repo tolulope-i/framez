@@ -1,15 +1,11 @@
 import { create } from 'zustand';
-import { PostsState, Post, Comment } from '@/types';
+import { PostsState, Post } from '@/types';
 import { supabase } from '@/services/supabase';
 import { uploadImage } from '@/utils/imageUpload';
 
 interface PostWithCounts extends Post {
-  likes_count: number;
-  comments_count: number;
-  is_liked: boolean;
-  is_saved: boolean;
   likes: { user_id: string }[];
-  comments: { id: string; content: string; user_id: string; created_at: string }[];
+  comments: { id: string; content: string; user_id: string; created_at: string; user?: { name: string; profile_image_url?: string } }[];
   saved_posts: { user_id: string }[];
 }
 
@@ -32,19 +28,19 @@ export const usePostsStore = create<PostsState>((set, get) => ({
           *,
           user:users(*),
           likes(user_id),
-          comments(id, content, user_id, created_at),
+          comments( *, user:users(name, profile_image_url) ),
           saved_posts(user_id)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const transformedPosts: Post[] = (data || []).map((post: any) => ({
+      const transformedPosts: Post[] = (data || []).map((post: PostWithCounts) => ({
         ...post,
         likes_count: post.likes?.length || 0,
         comments_count: post.comments?.length || 0,
-        is_liked: post.likes?.some((like: any) => like.user_id === user.id) || false,
-        is_saved: post.saved_posts?.some((saved: any) => saved.user_id === user.id) || false
+        is_liked: post.likes?.some((like) => like.user_id === user.id) || false,
+        is_saved: post.saved_posts?.some((saved) => saved.user_id === user.id) || false
       }));
 
       set({ posts: transformedPosts, loading: false });
@@ -68,7 +64,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
           *,
           user:users(*),
           likes(user_id),
-          comments(id, content, user_id, created_at),
+          comments( *, user:users(name, profile_image_url) ),
           saved_posts(user_id)
         `)
         .eq('user_id', userId)
@@ -76,12 +72,12 @@ export const usePostsStore = create<PostsState>((set, get) => ({
 
       if (error) throw error;
 
-      const transformedPosts: Post[] = (data || []).map((post: any) => ({
+      const transformedPosts: Post[] = (data || []).map((post: PostWithCounts) => ({
         ...post,
         likes_count: post.likes?.length || 0,
         comments_count: post.comments?.length || 0,
-        is_liked: post.likes?.some((like: any) => like.user_id === user.id) || false,
-        is_saved: post.saved_posts?.some((saved: any) => saved.user_id === user.id) || false
+        is_liked: post.likes?.some((like) => like.user_id === user.id) || false,
+        is_saved: post.saved_posts?.some((saved) => saved.user_id === user.id) || false
       }));
 
       set({ userPosts: transformedPosts, loading: false });
@@ -106,7 +102,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
             *,
             user:users(*),
             likes(user_id),
-            comments(id, content, user_id, created_at),
+            comments( *, user:users(name, profile_image_url) ),
             saved_posts(user_id)
           )
         `)
@@ -354,7 +350,7 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         ])
         .select(`
           *,
-          user:users(*)
+          user:users(name, profile_image_url)
         `)
         .single();
 
@@ -362,10 +358,10 @@ export const usePostsStore = create<PostsState>((set, get) => ({
 
       set((state) => ({
         posts: state.posts.map((p) => 
-          p.id === postId ? { ...p, comments_count: (p.comments_count || 0) + 1 } : p
+          p.id === postId ? { ...p, comments_count: (p.comments_count || 0) + 1, comments: [...(p.comments || []), data] } : p
         ),
         userPosts: state.userPosts.map((p) => 
-          p.id === postId ? { ...p, comments_count: (p.comments_count || 0) + 1 } : p
+          p.id === postId ? { ...p, comments_count: (p.comments_count || 0) + 1, comments: [...(p.comments || []), data] } : p
         ),
       }));
 
