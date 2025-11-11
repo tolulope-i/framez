@@ -186,7 +186,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ connectionError: null });
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
       });

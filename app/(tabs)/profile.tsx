@@ -23,6 +23,7 @@ import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { Post, User } from "@/types";
 import { router } from "expo-router";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 // ✅ Remove "images" from the type
 type ProfileTab = "posts" | "saved";
@@ -52,7 +53,7 @@ export default function ProfileScreen() {
     website: "",
     location: "",
   });
-
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const loadProfileData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -91,20 +92,8 @@ export default function ProfileScreen() {
   const isOwnProfile = profileUser?.id === user?.id;
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await signOut();
-          } catch (error: any) {
-            Alert.alert("Error", error.message);
-          }
-        },
-      },
-    ]);
+    setShowLogoutConfirm(true);
+    setShowOptions(false);
   };
 
   const handleEditProfile = () => {
@@ -601,6 +590,25 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Logout Confirmation Dialog */}
+      <ConfirmDialog
+        visible={showLogoutConfirm}
+        title="Logout"
+        message="Are you sure you want to logout?"
+        confirmText="Logout"
+        cancelText="Cancel"
+        onConfirm={async () => {
+          try {
+            setShowLogoutConfirm(false);
+            await signOut();
+            // Optional: Show success toast later
+          } catch (error: any) {
+            Alert.alert("Error", error.message || "Failed to logout");
+          }
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </SafeAreaView>
   );
 }

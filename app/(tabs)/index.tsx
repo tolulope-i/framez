@@ -156,11 +156,23 @@ export default function PostsScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/profile")}
-            style={[styles.avatar, { backgroundColor: colors.primary }]}
+            style={styles.avatarContainer}
           >
-            <Text style={styles.avatarText}>
-              {user?.name?.charAt(0).toUpperCase() || "U"}
-            </Text>
+            {user?.profile_image_url ? (
+              <Image
+                source={{ uri: user.profile_image_url }}
+                style={styles.avatarImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View
+                style={[styles.avatar, { backgroundColor: colors.primary }]}
+              >
+                <Text style={styles.avatarText}>
+                  {user?.name?.charAt(0).toUpperCase() || "U"}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -458,6 +470,16 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     width: "40%",
+    height: "100%",
+  },
+  avatarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden", // Important for image clipping
+  },
+  avatarImage: {
+    width: "100%",
     height: "100%",
   },
 });

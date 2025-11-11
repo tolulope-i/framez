@@ -1,50 +1,133 @@
-# Welcome to your Expo app 👋
+# Framez - Social Media Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A full-featured social media mobile application built with React Native, Expo, TypeScript, and Supabase.
 
-## Get started
+## Features
 
-1. Install dependencies
+- ✅ User authentication (Sign up, Sign in, Password reset)
+- ✅ Persistent sessions and theme mode
+- ✅ Create, edit, and delete posts
+- ✅ Image uploads with posts
+- ✅ Real-time posts feed
+- ✅ User profile with personal posts
+- ✅ Dark mode and light mode
+- ✅ Form validation with inline errors
+- ✅ Responsive and modern UI
 
-   ```bash
-   npm install
-   ```
+## Tech Stack
 
-2. Start the app
+- **Framework**: React Native with Expo
+- **Language**: TypeScript
+- **Backend**: Supabase (Authentication, Database, Storage)
+- **State Management**: Zustand
+- **UI**: React Native, Expo Linear Gradient
+- **Storage**: AsyncStorage (for theme persistence)
 
-   ```bash
-   npx expo start
-   ```
+## Prerequisites
 
-In the output, you'll find options to open the app in a
+Before you begin, ensure you have the following installed:
+- Node.js (v16 or higher)
+- npm or yarn
+- Expo CLI (`npm install -g expo-cli`)
+- Expo Go app on your mobile device (iOS/Android)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Step-by-Step Setup Guide
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 1. Clone the Repository
 
 ```bash
-npm run reset-project
+git clone https://github.com/tolulope-i/framez.git
+cd framez-app
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Install Dependencies
 
-## Learn more
+```bash
+npm install
+# or
+yarn install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### 3. Supabase Setup
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+#### A. Create a Supabase Account
+1. Go to [https://supabase.com](https://supabase.com)
+2. Sign up for a free account
+3. Create a new project
+4. Note down your project URL and anon key
 
-## Join the community
+#### B. Create Database Tables
 
-Join our community of developers creating universal apps.
+Run your SQL commands in Supabase SQL Editor to create all neccessary tables and policies:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+#### C. Setup Storage Bucket
+
+1. Go to Storage in Supabase dashboard
+2. Create a new bucket named `posts`
+3. Make it public
+4. Add some policy:
+
+### 4. Environment Configuration
+
+Create a `.env` file in the root directory:
+Add your Supabase credentials:
+
+```
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+### 5. Run the Application
+
+```bash
+# Start the development server
+npm start
+# or
+expo start
+```
+
+Options:
+- Press `i` for iOS simulator
+- Press `a` for Android emulator
+- Scan QR code with Expo Go app on your phone
+
+### Manual Testing Checklist:
+
+1. **Authentication**
+   - [ ] Sign up with valid credentials
+   - [ ] Sign in with existing account
+   - [ ] Password reset functionality
+   - [ ] Session persistence on app restart
+
+2. **Posts**
+   - [ ] Create post with text only
+   - [ ] Create post with text and image
+   - [ ] Edit own posts
+   - [ ] Delete own posts
+   - [ ] View all posts feed
+
+3. **Profile**
+   - [ ] View own profile
+   - [ ] See own posts
+   - [ ] Logout
+
+4. **Theme**
+   - [ ] Toggle between light and dark mode
+   - [ ] Theme persists on app restart
+
+## Deployment to Appetize.io
+
+1. Build your app:
+```bash
+expo build:android
+# or
+expo build:ios
+```
+
+2. Download the built `.apk` (Android) or `.app` (iOS) file
+
+3. Go to [https://appetize.io](https://appetize.io)
+
+4. Upload your app file
+
+5. Get your public link to share
