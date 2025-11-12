@@ -65,7 +65,8 @@ export interface AuthState {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  initialize: () => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
+verifyOTP: (email: string, token: string) => Promise<any>;  initialize: () => Promise<void>;
   clearError: () => void;
 }
 

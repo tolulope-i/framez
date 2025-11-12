@@ -20,7 +20,18 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.devtolu25.framezapp"
+      "package": "com.devtolu25.framezapp",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "framezapp"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -49,9 +60,7 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "extra": {
       "supabaseUrl": "https://xzanpadwkokvgvzrzaah.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6YW5wYWR3a29rdmd2enJ6YWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MzM3OTEsImV4cCI6MjA3ODMwOTc5MX0.zFEnLRvlWo7vb3O8-o9nlcuL4rGRWxjbwNMeOA2gJII",

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { AuthState } from "@/types";
 import { supabase } from "@/services/supabase";
+import { Platform } from "react-native";
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -224,18 +225,47 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   resetPassword: async (email: string) => {
     try {
+      const redirectTo = Platform.select({
+        web: `${window.location.origin}/reset-password`,
+        default: 'framezapp://reset-password', 
+      });
+
+      const finalRedirect = `${redirectTo}?email=${encodeURIComponent(email)}`;
       const { error } = await supabase.auth.resetPasswordForEmail(
         email.trim().toLowerCase(),
-        {
-          redirectTo: `${window.location.origin}/reset-password`,
-        }
+        { redirectTo: finalRedirect }
       );
+
       if (error) throw error;
     } catch (error: any) {
-      console.error("Reset password error:", error);
-      throw new Error(
-        error.message || "Password reset failed. Please try again."
-      );
+      throw new Error(error.message || 'Failed to send reset link');
+    }
+  },
+
+  verifyOTP: async (email: string, tokenHash: string) => {
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: tokenHash,
+        type: 'recovery',
+      });
+      if (error) throw error;
+      if (data.session) set({ session: data.session });
+      return data;
+    } catch (error: any) {
+      throw new Error(error.message || 'Invalid or expired link');
+    }
+  },
+  updatePassword: async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password.trim(),
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Update password error:', error);
+      throw new Error(error.message || 'Password update failed. Please try again.');
     }
   },
 
