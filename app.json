@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Framez",
+    "name": "framez-app",
     "slug": "framez-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,11 +13,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.devtolu25.framezapp"
     },
     "web": {
       "bundler": "metro",
@@ -32,7 +35,10 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+          }
         }
       ]
     ],
@@ -45,9 +51,6 @@
     },
     "assetBundlePatterns": ["**/*"],
     "extra": {
-      "eas": {
-        "projectId": "your-project-id"
-      },
       "supabaseUrl": "https://xzanpadwkokvgvzrzaah.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6YW5wYWR3a29rdmd2enJ6YWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MzM3OTEsImV4cCI6MjA3ODMwOTc5MX0.zFEnLRvlWo7vb3O8-o9nlcuL4rGRWxjbwNMeOA2gJII"
     }
