@@ -1,7 +1,7 @@
 export const Colors = {
   light: {
-    primary: '#FF8C42',
-    secondary: '#FFD93D',
+    primary: '#FF6B00',
+    secondary: '#FFD84D',
     background: '#F5F5F5',
     surface: '#FFFFFF',
     text: '#1A1A1A',
@@ -11,8 +11,8 @@ export const Colors = {
     success: '#4CAF50',
   },
   dark: {
-    primary: '#FF8C42',
-    secondary: '#FFD93D',
+    primary: '#FF6B00',
+    secondary: '#FFD84D',
     background: '#1A1A1A',
     surface: '#2A2A2A',
     text: '#FFFFFF',

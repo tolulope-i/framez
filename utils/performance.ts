@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 
-// Debounce hook for search and other frequent updates
 export const useDebounce = (value: any, delay: number) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
   
@@ -17,7 +16,6 @@ export const useDebounce = (value: any, delay: number) => {
   return debouncedValue;
 };
 
-// Optimized image preloading
 export const preloadImages = (urls: string[]) => {
   urls.forEach(url => {
     const img = new Image();
@@ -25,7 +23,6 @@ export const preloadImages = (urls: string[]) => {
   });
 };
 
-// Memoization helper for expensive computations
 export const memoize = (fn: Function) => {
   const cache = new Map();
   return (...args: any[]) => {

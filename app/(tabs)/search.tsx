@@ -85,7 +85,6 @@ export default function SearchScreen() {
     },
     [currentUser?.id]
   );
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -108,7 +107,6 @@ export default function SearchScreen() {
 
   const handleUserPress = useCallback(
     (userId: string) => {
-      // Fetch profile first, then navigate
       fetchUserProfile(userId).then(() => {
         router.push("/(tabs)/profile");
       });

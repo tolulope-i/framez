@@ -11,14 +11,10 @@ export default function AuthLayout() {
 
   useEffect(() => {
     if (loading) return;
-
-    // If user is authenticated and in auth group, redirect to tabs
     if (user && segments[0] === '(auth)') {
       router.replace('/(tabs)');
     }
-  }, [user, loading, segments]);
-
-  // Show loading while checking auth state
+  }, [user, loading, segments, router]);
   if (loading) {
     return (
       <View style={{ flex: 1 }}>

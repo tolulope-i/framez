@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,62 +9,64 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAuthStore } from '@/store/authStore';
-import { useThemeStore } from '@/store/themeStore';
-import { Colors } from '@/constants/Colors';
-import { validateEmail, validatePassword, validateName } from '@/utils/validation';
+} from "react-native";
+import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { useAuthStore } from "@/store/authStore";
+import { useThemeStore } from "@/store/themeStore";
+import { Colors } from "@/constants/Colors";
+import {
+  validateEmail,
+  validatePassword,
+  validateName,
+} from "@/utils/validation";
 
 export default function SignUpScreen() {
   const { signUp } = useAuthStore();
   const { isDark } = useThemeStore();
   const colors = isDark ? Colors.dark : Colors.light;
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [errors, setErrors] = useState({
-    name: '',
-    email: '',
-    password: '',
+    name: "",
+    email: "",
+    password: "",
   });
 
   const handleSignUp = async () => {
-  const nameError = validateName(name);
-  const emailError = validateEmail(email);
-  const passwordError = validatePassword(password);
-  setErrors({
-    name: nameError || '',
-    email: emailError || '',
-    password: passwordError || '',
-  });
-  if (nameError || emailError || passwordError) {
-    return;
-  }
-  setLoading(true);
-  try {
-    await signUp(email, password, name);
-    // Navigation will be handled by the layout's useEffect
-    // Wait a moment for the auth state to update
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  } catch (error: any) {
-    Alert.alert('Sign Up Failed', error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+    const nameError = validateName(name);
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+    setErrors({
+      name: nameError || "",
+      email: emailError || "",
+      password: passwordError || "",
+    });
+    if (nameError || emailError || passwordError) {
+      return;
+    }
+    setLoading(true);
+    try {
+      await signUp(email, password, name);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error: any) {
+      Alert.alert("Sign Up Failed", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
       <LinearGradient
-        colors={isDark ? ['#1A1A1A', '#2A2A2A'] : ['#F5F5F5', '#FFFFFF']}
+        colors={isDark ? ["#1A1A1A", "#2A2A2A"] : ["#F5F5F5", "#FFFFFF"]}
         style={styles.gradient}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -72,14 +74,13 @@ export default function SignUpScreen() {
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Text style={[styles.backText, { color: colors.text }]}>← Back</Text>
+            <Text style={[styles.backText, { color: colors.text }]}>
+              ← Back
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.logoContainer}>
-            <LinearGradient
-              colors={['#FF8C42', '#FFD93D']}
-              style={styles.logo}
-            >
+            <LinearGradient colors={["#FF8C42", "#FFD93D"]} style={styles.logo}>
               <Text style={styles.logoText}>F</Text>
             </LinearGradient>
           </View>
@@ -93,7 +94,9 @@ export default function SignUpScreen() {
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: colors.text }]}>Full Name</Text>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Full Name
+              </Text>
               <TextInput
                 style={[
                   styles.input,
@@ -106,7 +109,7 @@ export default function SignUpScreen() {
                 value={name}
                 onChangeText={(text) => {
                   setName(text);
-                  setErrors((prev) => ({ ...prev, name: '' }));
+                  setErrors((prev) => ({ ...prev, name: "" }));
                 }}
                 placeholder="Enter your name"
                 placeholderTextColor={colors.textSecondary}
@@ -133,7 +136,7 @@ export default function SignUpScreen() {
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
-                  setErrors((prev) => ({ ...prev, email: '' }));
+                  setErrors((prev) => ({ ...prev, email: "" }));
                 }}
                 placeholder="Enter your email"
                 placeholderTextColor={colors.textSecondary}
@@ -148,7 +151,9 @@ export default function SignUpScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: colors.text }]}>Password</Text>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Password
+              </Text>
               <TextInput
                 style={[
                   styles.input,
@@ -161,7 +166,7 @@ export default function SignUpScreen() {
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
-                  setErrors((prev) => ({ ...prev, password: '' }));
+                  setErrors((prev) => ({ ...prev, password: "" }));
                 }}
                 placeholder="Enter your password"
                 placeholderTextColor={colors.textSecondary}
@@ -180,23 +185,25 @@ export default function SignUpScreen() {
               style={styles.submitButton}
             >
               <LinearGradient
-                colors={['#FF8C42', '#FFD93D']}
+                colors={['#FF6B00', '#ffffff', '#FFD84D']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.buttonGradient}
               >
-                <Text style={styles.buttonText}>
-                  {loading ? 'Creating Account...' : 'Sign Up'}
+                <Text style={styles.textBlack}>
+                  {loading ? "Creating Account..." : "Sign Up"}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-                Already have an account?{' '}
+              <Text
+                style={[styles.footerText, { color: colors.textSecondary }]}
+              >
+                Already have an account?{" "}
                 <Text
-                  style={{ color: colors.primary, fontWeight: '600' }}
-                  onPress={() => router.push('/(auth)/signin')}
+                  style={{ color: colors.primary, fontWeight: "600" }}
+                  onPress={() => router.push("/(auth)/signin")}
                 >
                   Sign In
                 </Text>
@@ -223,38 +230,38 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   backButton: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginBottom: 20,
   },
   backText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 32,
   },
   logo: {
     width: 80,
     height: 80,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   logoText: {
     fontSize: 40,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 32,
   },
   form: {
@@ -265,7 +272,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   input: {
     borderWidth: 1,
@@ -282,16 +289,21 @@ const styles = StyleSheet.create({
   },
   buttonGradient: {
     padding: 18,
-    borderRadius: 16,
-    alignItems: 'center',
+    borderRadius: 50,
+    alignItems: "center",
   },
   buttonText: {
-    color: '#FFF',
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  textBlack: {
+    color: '#000',
     fontSize: 18,
     fontWeight: 'bold',
   },
   footer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
   },
   footerText: {

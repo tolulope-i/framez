@@ -26,14 +26,12 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
   const { stories } = useStoriesStore();
   const { user } = useAuthStore();
   const colors = isDark ? Colors.dark : Colors.light;
-  // Group stories by user
   const groupedStories = stories.reduce((acc: Record<string, Story[]>, story) => {
     const userId = story.user_id;
     if (!acc[userId]) acc[userId] = [];
     acc[userId].push(story);
     return acc;
   }, {});
-  // Sort groups by latest story
   const sortedGroups = Object.entries(groupedStories)
     .sort(([, aStories], [, bStories]) => {
       const aLatest = new Date(Math.max(...aStories.map(s => new Date(s.created_at).getTime())));
@@ -97,7 +95,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
             </Text>
           </TouchableOpacity>
         )}
-        {/* Other Users' Stories */}
+
         {sortedGroups.filter(([userId]) => userId !== user?.id).map(([userId, userStories]) => {
           const storyUser = userStories[0].user;
           const hasUnseen = userStories.some(s => !s.seen);

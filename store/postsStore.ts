@@ -3,17 +3,19 @@ import { PostsState, Post } from "@/types";
 import { supabase } from "@/services/supabase";
 import { uploadImage } from "@/utils/imageUpload";
 
-interface PostWithCounts extends Post {
+interface PostWithCounts extends Omit<Post, "comments"> {
   likes: { user_id: string }[];
   comments: {
     id: string;
     content: string;
     user_id: string;
+    post_id?: string;
     created_at: string;
     user?: { name: string; profile_image_url?: string };
   }[];
   saved_posts: { user_id: string }[];
 }
+
 
 export const usePostsStore = create<PostsState>((set, get) => ({
   posts: [],
@@ -264,23 +266,23 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         posts: state.posts.map((p) =>
           p.id === postId
             ? {
-                ...data,
-                likes_count: p.likes_count,
-                comments_count: p.comments_count,
-                is_liked: p.is_liked,
-                is_saved: p.is_saved,
-              }
+              ...data,
+              likes_count: p.likes_count,
+              comments_count: p.comments_count,
+              is_liked: p.is_liked,
+              is_saved: p.is_saved,
+            }
             : p
         ),
         userPosts: state.userPosts.map((p) =>
           p.id === postId
             ? {
-                ...data,
-                likes_count: p.likes_count,
-                comments_count: p.comments_count,
-                is_liked: p.is_liked,
-                is_saved: p.is_saved,
-              }
+              ...data,
+              likes_count: p.likes_count,
+              comments_count: p.comments_count,
+              is_liked: p.is_liked,
+              is_saved: p.is_saved,
+            }
             : p
         ),
       }));
@@ -342,19 +344,19 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         posts: state.posts.map((p) =>
           p.id === postId
             ? {
-                ...p,
-                likes_count: Math.max(0, (p.likes_count || 1) - 1),
-                is_liked: false,
-              }
+              ...p,
+              likes_count: Math.max(0, (p.likes_count || 1) - 1),
+              is_liked: false,
+            }
             : p
         ),
         userPosts: state.userPosts.map((p) =>
           p.id === postId
             ? {
-                ...p,
-                likes_count: Math.max(0, (p.likes_count || 1) - 1),
-                is_liked: false,
-              }
+              ...p,
+              likes_count: Math.max(0, (p.likes_count || 1) - 1),
+              is_liked: false,
+            }
             : p
         ),
       }));
@@ -451,19 +453,19 @@ export const usePostsStore = create<PostsState>((set, get) => ({
         posts: state.posts.map((p) =>
           p.id === postId
             ? {
-                ...p,
-                comments_count: (p.comments_count || 0) + 1,
-                comments: [...(p.comments || []), data],
-              }
+              ...p,
+              comments_count: (p.comments_count || 0) + 1,
+              comments: [...(p.comments || []), data],
+            }
             : p
         ),
         userPosts: state.userPosts.map((p) =>
           p.id === postId
             ? {
-                ...p,
-                comments_count: (p.comments_count || 0) + 1,
-                comments: [...(p.comments || []), data],
-              }
+              ...p,
+              comments_count: (p.comments_count || 0) + 1,
+              comments: [...(p.comments || []), data],
+            }
             : p
         ),
       }));

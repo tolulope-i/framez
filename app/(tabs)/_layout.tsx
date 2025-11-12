@@ -13,8 +13,8 @@ export default function TabsLayout() {
   const router = useRouter();
   const colors = isDark ? Colors.dark : Colors.light;
 
-  const windowWidth = Dimensions.get('window').width;
-  const isWebLarge = Platform.OS === 'web' && windowWidth > 768;
+  const windowWidth = Dimensions.get("window").width;
+  const isWebLarge = Platform.OS === "web" && windowWidth > 768;
 
   useEffect(() => {
     if (loading) return;
@@ -47,7 +47,7 @@ export default function TabsLayout() {
           height: 70,
           paddingBottom: 8,
           paddingTop: 8,
-          display: isWebLarge ? 'none' : 'flex',
+          display: isWebLarge ? "none" : "flex",
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,

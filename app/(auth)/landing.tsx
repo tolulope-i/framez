@@ -4,14 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeStore } from '@/store/themeStore';
 import { Colors } from '@/constants/Colors';
-
-const { width, height } = Dimensions.get('window');
 
 export default function LandingScreen() {
   const { isDark } = useThemeStore();
@@ -78,12 +75,12 @@ export default function LandingScreen() {
         <View style={styles.buttonContainer}>
           <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
             <LinearGradient
-              colors={['#FF8C42', '#FFD93D']}
+                colors={['#FF6B00', '#ffffff', '#FFD84D']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.primaryButton}
             >
-              <Text style={styles.primaryButtonText}>Get Started →</Text>
+              <Text style={styles.textBlack}>Get Started →</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -194,11 +191,16 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     padding: 18,
-    borderRadius: 16,
+    borderRadius: 50,
     alignItems: 'center',
   },
   primaryButtonText: {
     color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  textBlack: {
+    color: '#000',
     fontSize: 18,
     fontWeight: 'bold',
   },

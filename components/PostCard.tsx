@@ -19,6 +19,7 @@ import { usePostsStore } from "@/store/postsStore";
 import { Colors } from "@/constants/Colors";
 import { validatePostContent } from "@/utils/validation";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { Ionicons, Feather } from "@expo/vector-icons";
 
 interface PostCardProps {
   post: Post;
@@ -51,8 +52,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleDelete = () => {
-    setShowOptions(false); // close options menu
-    setShowDeleteConfirm(true); // open our custom dialog
+    setShowOptions(false);
+    setShowDeleteConfirm(true);
   };
 
   const performDelete = async () => {
@@ -60,9 +61,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
     try {
       setLoading(true);
       await deletePost(post.id);
-      // UI updates automatically via Zustand
     } catch (error: any) {
-      // Show error with the same dialog style (or Alert on mobile)
       if (Platform.OS === "web") {
         alert(error.message ?? "Failed to delete post");
       } else {
@@ -236,14 +235,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
       <View style={styles.actions}>
         <View style={styles.leftActions}>
           <TouchableOpacity onPress={handleLike} style={styles.actionButton}>
-            <Text
-              style={[
-                styles.actionIcon,
-                { color: post.is_liked ? colors.error : colors.text },
-              ]}
-            >
-              {post.is_liked ? "❤️" : "🤍"}
-            </Text>
+            <Ionicons
+              name={post.is_liked ? "heart" : "heart-outline"}
+              size={22}
+              color={post.is_liked ? colors.error : colors.text}
+            />
             <Text style={[styles.actionCount, { color: colors.textSecondary }]}>
               {post.likes_count || 0}
             </Text>
@@ -253,26 +249,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
             onPress={() => setShowComments(!showComments)}
             style={styles.actionButton}
           >
-            <Text style={[styles.actionIcon, { color: colors.text }]}>💬</Text>
+            <Ionicons name="chatbubble-outline" size={22} color={colors.text} />
             <Text style={[styles.actionCount, { color: colors.textSecondary }]}>
               {post.comments_count || 0}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={handleShare} style={styles.actionButton}>
-            <Text style={[styles.actionIcon, { color: colors.text }]}>↗️</Text>
+            <Feather name="share-2" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity onPress={handleSave} style={styles.actionButton}>
-          <Text
-            style={[
-              styles.actionIcon,
-              { color: post.is_saved ? colors.primary : colors.text },
-            ]}
-          >
-            {post.is_saved ? "🔖" : "📑"}
-          </Text>
+          <Ionicons
+            name={post.is_saved ? "bookmark" : "bookmark-outline"}
+            size={22}
+            color={post.is_saved ? colors.primary : colors.text}
+          />
         </TouchableOpacity>
       </View>
 
@@ -314,10 +307,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
           activeOpacity={1}
           onPress={() => setShowOptions(false)}
         >
-          {/* Prevent overlay tap when clicking inside menu */}
           <TouchableOpacity
             activeOpacity={1}
-            onPress={(e) => e.stopPropagation()} // Critical!
+            onPress={(e) => e.stopPropagation()}
             style={[styles.optionsMenu, { backgroundColor: colors.surface }]}
           >
             {isOwner && (
@@ -437,7 +429,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUserPress }) => {
         </View>
       </Modal>
 
-      {/* ----- DELETE CONFIRM DIALOG ----- */}
       <ConfirmDialog
         visible={showDeleteConfirm}
         title="Delete Post"

@@ -47,7 +47,7 @@ export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [9, 16], // Story aspect ratio
+        aspect: [9, 16], 
         quality: 0.8,
       });
 

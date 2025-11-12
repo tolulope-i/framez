@@ -29,7 +29,7 @@ export const uploadImage = async (imageUri: string, userId: string): Promise<str
       }
 
       base64 = await FileSystem.readAsStringAsync(imageUri, {
-  encoding: 'base64', // ✅ Correct for Expo SDK 54
+  encoding: 'base64', 
 });
 
     }

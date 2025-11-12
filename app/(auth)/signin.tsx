@@ -33,27 +33,25 @@ export default function SignInScreen() {
   const { connectionError, clearError } = useAuthStore();
 
   const handleSignIn = async () => {
-  const emailError = validateEmail(email);
-  const passwordError = validatePassword(password);
-  setErrors({
-    email: emailError || '',
-    password: passwordError || '',
-  });
-  if (emailError || passwordError) {
-    return;
-  }
-  setLoading(true);
-  try {
-    await signIn(email, password);
-    // Navigation will be handled by the layout's useEffect
-    // Wait a moment for the auth state to update
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  } catch (error: any) {
-    Alert.alert('Sign In Failed', error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+    setErrors({
+      email: emailError || "",
+      password: passwordError || "",
+    });
+    if (emailError || passwordError) {
+      return;
+    }
+    setLoading(true);
+    try {
+      await signIn(email, password);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error: any) {
+      Alert.alert("Sign In Failed", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -171,12 +169,12 @@ export default function SignInScreen() {
               style={styles.submitButton}
             >
               <LinearGradient
-                colors={["#FF8C42", "#FFD93D"]}
+                colors={['#FF6B00', '#ffffff', '#FFD84D']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.buttonGradient}
               >
-                <Text style={styles.buttonText}>
+                <Text style={styles.textBlack}>
                   {loading ? "Signing In..." : "Sign In"}
                 </Text>
               </LinearGradient>
@@ -282,13 +280,18 @@ const styles = StyleSheet.create({
   },
   buttonGradient: {
     padding: 18,
-    borderRadius: 16,
+    borderRadius: 50,
     alignItems: "center",
   },
   buttonText: {
     color: "#FFF",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  textBlack: {
+    color: '#000',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   footer: {
     alignItems: "center",

@@ -17,7 +17,6 @@ import { usePostsStore } from "@/store/postsStore";
 import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { validatePostContent } from "@/utils/validation";
-
 interface CreatePostModalProps {
   visible: boolean;
   onClose: () => void;
@@ -38,7 +37,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   const pickImage = async () => {
   try {
-    // Request permissions
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
@@ -50,7 +48,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, // ✅ Correct for Expo SDK 54
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
@@ -60,7 +58,6 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     if (!result.canceled && result.assets[0]) {
       const selectedImage = result.assets[0];
 
-      // Validate image size if available
       if (selectedImage.fileSize && selectedImage.fileSize > 10 * 1024 * 1024) {
         Alert.alert("Error", "Image size should be less than 10MB");
         return;
@@ -103,7 +100,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   };
 
   const handleClose = () => {
-    if (loading) return; // Prevent closing while posting
+    if (loading) return; 
 
     setContent("");
     setImageUri(null);
@@ -226,7 +223,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
               ]}
             >
               <LinearGradient
-                colors={["#FF8C42", "#FFD93D"]}
+                colors={['#FF6B00', '#ffffff', '#FFD84D']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.submitButtonGradient}
@@ -349,7 +346,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitButtonText: {
-    color: "#FFF",
+    color: "#000",
     fontSize: 18,
     fontWeight: "bold",
   },

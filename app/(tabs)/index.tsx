@@ -103,7 +103,7 @@ export default function PostsScreen() {
     setStoryModalVisible(true);
   }, []);
 
-  const handleNextStory = () => {
+  const handleNextStory = useCallback(() => {
     if (
       selectedUserStories &&
       currentStoryIndex < selectedUserStories.length - 1
@@ -114,7 +114,7 @@ export default function PostsScreen() {
     } else {
       setSelectedUserStories(null);
     }
-  };
+  }, [selectedUserStories, currentStoryIndex, markStoryAsSeen]);
 
   const handlePrevStory = () => {
     if (currentStoryIndex > 0) {
@@ -127,7 +127,7 @@ export default function PostsScreen() {
       const timer = setTimeout(handleNextStory, 5000);
       return () => clearTimeout(timer);
     }
-  }, [selectedUserStories, currentStoryIndex]);
+  }, [selectedUserStories, currentStoryIndex, handleNextStory]);
 
   const renderPost = useCallback(
     ({ item }: { item: any }) => (
@@ -215,7 +215,7 @@ export default function PostsScreen() {
         onPress={() => setModalVisible(true)}
       >
         <LinearGradient
-          colors={["#FF8C42", "#FFD93D"]}
+          colors={['#FF6B00', '#ffffff', '#FFD84D']}
           style={styles.fabGradient}
         >
           <Text style={styles.fabText}>+</Text>
@@ -226,7 +226,7 @@ export default function PostsScreen() {
 
   const webLayout = (
     <View style={styles.webContainer}>
-      {/* Left Sidebar - Featured Posts */}
+      {/* Right Sidebar - Featured Posts */}
       <View style={[styles.sidebar, { borderColor: colors.border }]}>
         <Text style={[styles.sidebarTitle, { color: colors.text }]}>
           Navigation
@@ -257,14 +257,14 @@ export default function PostsScreen() {
       {/* Main Content */}
       <View style={styles.mainContent}>{mobileLayout}</View>
 
-      {/* Right Sidebar - Navigation */}
+      {/* Left Sidebar - Navigation */}
 
       <View style={[styles.sidebar, { borderColor: colors.border }]}>
         <Text style={[styles.sidebarTitle, { color: colors.text }]}>
           Featured Posts
         </Text>
         <FlatList
-          data={posts.slice(0, 5)} // Example featured: top 5 recent
+          data={posts.slice(0, 5)} 
           keyExtractor={(item) => item.id}
           renderItem={renderPost}
           showsVerticalScrollIndicator={false}
@@ -431,8 +431,8 @@ const styles = StyleSheet.create({
   },
   fabText: {
     fontSize: 32,
-    color: "#FFF",
-    fontWeight: "300",
+    color: "#000",
+    fontWeight: "700",
   },
   storyModalOverlay: {
     flex: 1,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    overflow: "hidden", // Important for image clipping
+    overflow: "hidden", 
   },
   avatarImage: {
     width: "100%",

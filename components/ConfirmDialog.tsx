@@ -1,4 +1,3 @@
-// components/ConfirmDialog.tsx
 import React from "react";
 import {
   Modal,
@@ -34,7 +33,6 @@ export const ConfirmDialog: React.FC<Props> = ({
   const { isDark } = useThemeStore();
   const colors = isDark ? Colors.dark : Colors.light;
 
-  // Make the dialog a bit narrower on large screens
   const screen = Dimensions.get("window");
   const dialogWidth = Platform.OS === "web" && screen.width > 640 ? 400 : "85%";
 
@@ -77,8 +75,6 @@ export const ConfirmDialog: React.FC<Props> = ({
           </View>
         </View>
       </View>
-
-      
     </Modal>
   );
 };

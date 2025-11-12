@@ -33,11 +33,17 @@ export interface Post {
 export interface Comment {
   id: string;
   user_id: string;
-  post_id: string;
+  post_id?: string;
   content: string;
   created_at: string;
   updated_at?: string;
-  user?: User;
+  user?: {
+    id?: string;
+    email?: string;
+    name?: string;
+    profile_image_url?: string;
+    created_at?: string;
+  };
 }
 
 export interface Story {

@@ -25,7 +25,6 @@ import { Post, User } from "@/types";
 import { router } from "expo-router";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
-// ✅ Remove "images" from the type
 type ProfileTab = "posts" | "saved";
 
 export default function ProfileScreen() {
@@ -102,19 +101,18 @@ export default function ProfileScreen() {
   };
 
   const handleUpdateProfile = async () => {
-    // Prevent double-click
     if (loading) return;
 
     try {
-      setLoading(true); // show "Saving..."
-      await updateProfile(editForm); // <-- now resolves or throws
-      setShowEditModal(false); // close modal
+      setLoading(true);
+      await updateProfile(editForm);
+      setShowEditModal(false);
       Alert.alert("Success", "Profile updated successfully");
       if (user) await fetchUserProfile(user.id);
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to update profile");
     } finally {
-      setLoading(false); // always re-enable buttons
+      setLoading(false);
     }
   };
 
@@ -161,7 +159,6 @@ export default function ProfileScreen() {
     }
   };
 
-  // ✅ Simplified getDisplayData — removed "images"
   const getDisplayData = () => {
     switch (activeTab) {
       case "posts":
@@ -210,9 +207,19 @@ export default function ProfileScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
-        <View style={styles.profileHeader}>
+        <View
+          style={[styles.profileHeader, { backgroundColor: colors.surface }]}
+        >
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Text style={[styles.backText, { color: colors.text }]}>
+              ← Back
+            </Text>
+          </TouchableOpacity>
           <LinearGradient
-            colors={["#FF8C42", "#FFD93D", "#4CAF50", "#2196F3"]}
+            colors={['#FF6B00', '#ffffff', '#FFD84D']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.coverGradient}
@@ -353,7 +360,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* ✅ Tabs – removed "images" */}
         <View
           style={[styles.tabsContainer, { backgroundColor: colors.surface }]}
         >
@@ -383,7 +389,6 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* ✅ Simplified content rendering (no images grid) */}
         {loading && displayData.length === 0 ? (
           <LoadingSpinner />
         ) : (
@@ -568,9 +573,9 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 onPress={() => {
                   setShowEditModal(false);
-                  setLoading(false); // <-- safety
+                  setLoading(false);
                 }}
-                disabled={false} // never disable cancel
+                disabled={false} 
                 style={[styles.button, { backgroundColor: colors.border }]}
               >
                 <Text style={[styles.buttonText, { color: colors.text }]}>
@@ -602,7 +607,6 @@ export default function ProfileScreen() {
           try {
             setShowLogoutConfirm(false);
             await signOut();
-            // Optional: Show success toast later
           } catch (error: any) {
             Alert.alert("Error", error.message || "Failed to logout");
           }
@@ -614,7 +618,6 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  // ... (styles remain the same as provided, add if needed)
   container: {
     flex: 1,
   },
@@ -835,5 +838,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 32,
     borderRadius: 24,
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    margin: 10,
+  },
+  backText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
