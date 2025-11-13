@@ -29,7 +29,10 @@
               "scheme": "framezapp"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -60,7 +63,15 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
-    "owner": "devtolu25"
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "owner": "devtolu25",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "151049cb-a0a5-4cae-a2fa-b60612a037f6"
+      }
+    }
   }
 }
