@@ -66,12 +66,7 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "owner": "devtolu25",
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "151049cb-a0a5-4cae-a2fa-b60612a037f6"
-      }
-    }
+    "owner": "devtolu25"
+   
   }
 }
