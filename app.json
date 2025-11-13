@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "framez-app",
+    "name": "framez",
     "slug": "framez-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -65,8 +65,6 @@
     },
     "assetBundlePatterns": [
       "**/*"
-    ],
-    "owner": "devtolu25"
-   
+    ]   
   }
 }
