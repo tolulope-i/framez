@@ -3,7 +3,7 @@ import { Text, View, Dimensions, Platform } from "react-native";
 import { useThemeStore } from "@/store/themeStore";
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/store/authStore";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function TabsLayout() {
@@ -12,22 +12,17 @@ export default function TabsLayout() {
   const segments = useSegments();
   const router = useRouter();
   const colors = isDark ? Colors.dark : Colors.light;
-  const hasNavigated = useRef(false); // ADDED: Prevent multiple navigations
 
   const windowWidth = Dimensions.get("window").width;
   const isWebLarge = Platform.OS === "web" && windowWidth > 768;
 
   useEffect(() => {
     if (loading) return;
-    
-    // CHANGED: Only navigate once when user is not authenticated
-    if (!user && segments[0] === "(tabs)" && !hasNavigated.current) {
-      hasNavigated.current = true;
-      setTimeout(() => {
-        router.replace("/(auth)/landing");
-      }, 100);
+
+    if (!user && segments[0] === "(tabs)") {
+      router.replace("/(auth)/landing");
     }
-  }, [user, loading, segments]);
+  }, [user, loading, segments, router]);
 
   if (loading) {
     return (

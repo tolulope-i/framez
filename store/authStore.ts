@@ -12,12 +12,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initialize: async () => {
     try {
       set({ loading: true, connectionError: null });
-
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       if (session?.user) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
         const { data: userData, error } = await supabase
           .from("users")
           .select("*")
@@ -57,14 +58,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ loading: false, connectionError: null });
       }
 
-      // CHANGED: Ignore INITIAL_SESSION in listener
       supabase.auth.onAuthStateChange(async (event, session) => {
         console.log("Auth event:", event);
 
-        // ADDED: Skip INITIAL_SESSION since we handled it above
-        if (event === "INITIAL_SESSION") return;
-
         if (event === "SIGNED_IN" && session?.user) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
           const { data: userData } = await supabase
             .from("users")
             .select("*")
@@ -94,6 +93,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               .select("*")
               .eq("id", session.user.id)
               .single();
+
             if (userData) {
               set({ user: userData });
             }
@@ -104,13 +104,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error("Auth initialization error:", error);
       set({
         loading: false,
-        connectionError: null,
-        user: null,
-        session: null,
+        connectionError: error.message || "Cannot connect to server",
       });
     }
   },
-  
+
   signUp: async (email: string, password: string, name: string) => {
     try {
       set({ connectionError: null });
@@ -229,7 +227,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const redirectTo = Platform.select({
         web: `${window.location.origin}/reset-password`,
-        default: "framezapp://reset-password",
+        default: 'framezapp://reset-password', 
       });
 
       const finalRedirect = `${redirectTo}?email=${encodeURIComponent(email)}`;
@@ -240,7 +238,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error;
     } catch (error: any) {
-      throw new Error(error.message || "Failed to send reset link");
+      throw new Error(error.message || 'Failed to send reset link');
     }
   },
 
@@ -249,13 +247,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { data, error } = await supabase.auth.verifyOtp({
         email,
         token: tokenHash,
-        type: "recovery",
+        type: 'recovery',
       });
       if (error) throw error;
       if (data.session) set({ session: data.session });
       return data;
     } catch (error: any) {
-      throw new Error(error.message || "Invalid or expired link");
+      throw new Error(error.message || 'Invalid or expired link');
     }
   },
   updatePassword: async (password: string) => {
@@ -266,10 +264,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error;
     } catch (error: any) {
-      console.error("Update password error:", error);
-      throw new Error(
-        error.message || "Password update failed. Please try again."
-      );
+      console.error('Update password error:', error);
+      throw new Error(error.message || 'Password update failed. Please try again.');
     }
   },
 
