@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { View } from 'react-native';
 
 export default function RootLayout() {
-  const { initialize, loading: authLoading } = useAuthStore();
+  const { initialize, loading: authLoading, } = useAuthStore();
   const { initializeTheme, isDark } = useThemeStore();
   const [appReady, setAppReady] = useState(false);
 
