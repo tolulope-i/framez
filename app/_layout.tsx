@@ -33,7 +33,7 @@ export default function RootLayout() {
       }
     };
     initApp();
-  }, [appReady, initialize, initializeTheme]);
+  }, []); // CHANGED: Remove dependencies to avoid infinite loop
 
   if (!appReady) {
     return (

@@ -13,15 +13,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ loading: true, connectionError: null });
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Connection timeout")), 10000)
-      );
-
-      const sessionPromise = supabase.auth.getSession();
-
       const {
         data: { session },
-      } = (await Promise.race([sessionPromise, timeoutPromise])) as any;
+      } = await supabase.auth.getSession();
 
       if (session?.user) {
         const { data: userData, error } = await supabase
@@ -63,8 +57,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ loading: false, connectionError: null });
       }
 
+      // CHANGED: Ignore INITIAL_SESSION in listener
       supabase.auth.onAuthStateChange(async (event, session) => {
         console.log("Auth event:", event);
+
+        // ADDED: Skip INITIAL_SESSION since we handled it above
+        if (event === "INITIAL_SESSION") return;
+
         if (event === "SIGNED_IN" && session?.user) {
           const { data: userData } = await supabase
             .from("users")
@@ -111,7 +110,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     }
   },
-
+  
   signUp: async (email: string, password: string, name: string) => {
     try {
       set({ connectionError: null });
