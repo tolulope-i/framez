@@ -106,6 +106,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         loading: false,
         connectionError: error.message || "Cannot connect to server",
       });
+    } finally{
+      set({loading: false})
     }
   },
 
