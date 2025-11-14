@@ -20,15 +20,18 @@ export default function RootLayout() {
 
   useEffect(() => {
     const initApp = async () => {
-      try {
+     try {
+        console.log("🚀 Initializing app...");
         await initializeTheme();
+        console.log("✅ Theme initialized");
         await initialize();
+        console.log("✅ Auth initialized");
         setInitError(null);
       } catch (error: any) {
-        console.error("App initialization error:", error);
+        console.error("❌ App initialization failed:", error);
         setInitError(error.message || "Failed to initialize app");
       } finally {
-        setAppReady(true); // Force render even on error
+        setAppReady(true);
       }
     };
     initApp();

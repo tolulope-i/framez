@@ -12,9 +12,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initialize: async () => {
     try {
       set({ loading: true, connectionError: null });
+          console.log("🔍 Starting auth initialization...");
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
+          console.log("✅ Session retrieved:", session ? "Yes" : "No");
+
 
       if (session?.user) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
