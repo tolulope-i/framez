@@ -16,24 +16,20 @@ export default function TabsLayout() {
   const windowWidth = Dimensions.get("window").width;
   const isWebLarge = Platform.OS === "web" && windowWidth > 768;
 
+  // ✅ ALL hooks go before any return
   useEffect(() => {
-    if (loading) return;
-
-    if (!user && segments[0] === "(tabs)") {
+    if (!loading && !user && segments[0] === "(tabs)") {
       router.replace("/(auth)/landing");
     }
   }, [user, loading, segments, router]);
 
+  // ✅ Conditional UI rendering is fine
   if (loading) {
     return (
       <View style={{ flex: 1 }}>
         <LoadingSpinner />
       </View>
     );
-  }
-
-  if (!user) {
-    return null;
   }
 
   return (
@@ -57,7 +53,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <Text style={{ fontSize: 24, color }}>🏠</Text>
           ),
         }}
@@ -66,7 +62,7 @@ export default function TabsLayout() {
         name="search"
         options={{
           title: "Search",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <Text style={{ fontSize: 24, color }}>🔍</Text>
           ),
         }}
@@ -75,7 +71,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <Text style={{ fontSize: 24, color }}>👤</Text>
           ),
         }}
